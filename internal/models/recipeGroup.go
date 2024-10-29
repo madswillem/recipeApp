@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/madswillem/gompare"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/tools"
+	"github.com/madswillem/recipeApp/internal/tools"
 )
 
 type RecipeGroupSchema struct {

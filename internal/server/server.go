@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/database"
+	"github.com/madswillem/recipeApp/internal/database"
 )
 
 const MethodGET = "GET"

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/madswillem/recipeApp_Backend_Go/internal/tools"
+	"github.com/madswillem/recipeApp/internal/tools"
 )
 
 func TestCalculateAverage(t *testing.T) {

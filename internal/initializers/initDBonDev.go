@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/madswillem/recipeApp_Backend_Go/internal/models"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/server"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/tools"
+	"github.com/madswillem/recipeApp/internal/models"
+	"github.com/madswillem/recipeApp/internal/server"
+	"github.com/madswillem/recipeApp/internal/tools"
 )
 
 func InitDBonDev(s *server.Server) error {

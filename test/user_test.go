@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/database"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/models"
+	"github.com/madswillem/recipeApp/internal/database"
+	"github.com/madswillem/recipeApp/internal/models"
 )
 
 func parseDuration(durationStr string) (time.Duration, error) {

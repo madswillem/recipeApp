@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/error_handler"
 )
 
 type IngredientDB struct {

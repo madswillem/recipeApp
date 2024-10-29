@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/madswillem/recipeApp_Backend_Go/internal/initializers"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/server"
+	"github.com/madswillem/recipeApp/internal/initializers"
+	"github.com/madswillem/recipeApp/internal/server"
 )
 
 func init() {
