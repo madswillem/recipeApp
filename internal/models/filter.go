@@ -60,21 +60,29 @@ func (f *Filter) Filter(db *sqlx.DB) (*[]RecipeSchema, *error_handler.APIError) 
 		}
 	}
 
-	query := `SELECT id, created_at, author, name, cuisine, yield, yield_unit, prep_time, cooking_time, version, selects, views
-    FROM (
-        SELECT DISTINCT ON (recipes.id) recipes.*, log.view_change
-        FROM recipes
-        LEFT JOIN recipe_ingredient ON recipes.id = recipe_ingredient.recipe_id
-        LEFT JOIN ingredient ON ingredient.id = recipe_ingredient.ingredient_id
-        LEFT JOIN nutritional_value ON recipes.id = nutritional_value.recipe_id
-        LEFT JOIN step ON recipes.id = step.recipe_id
-        LEFT JOIN recipe_selects_views_log log ON recipes.id = log.recipe_id
-        LEFT JOIN rel_diet_recipe rel ON recipes.id = rel.recipe_id
-        LEFT JOIN diet ON rel.diet_id = diet.id
-        WHERE ` + strings.Join(where, " AND ") + `
-        ORDER BY recipes.id, log.day DESC, log.view_change DESC
-    ) subquery
-    ORDER BY subquery.view_change DESC;`
+	query := fmt.Sprintf(
+		`SELECT id, created_at, author, name, cuisine, yield, yield_unit, prep_time, cooking_time, version, selects, views
+	    FROM (
+	        SELECT DISTINCT ON (recipes.id) recipes.*, log.view_change
+	        FROM recipes
+	        LEFT JOIN recipe_ingredient ON recipes.id = recipe_ingredient.recipe_id
+	        LEFT JOIN ingredient ON ingredient.id = recipe_ingredient.ingredient_id
+	        LEFT JOIN nutritional_value ON recipes.id = nutritional_value.recipe_id
+	        LEFT JOIN step ON recipes.id = step.recipe_id
+	        LEFT JOIN recipe_selects_views_log log ON recipes.id = log.recipe_id
+	        LEFT JOIN rel_diet_recipe rel ON recipes.id = rel.recipe_id
+	        LEFT JOIN diet ON rel.diet_id = diet.id
+	        %s
+	        ORDER BY recipes.id, log.day DESC, log.view_change DESC
+	    ) subquery
+	    ORDER BY subquery.view_change DESC;`,
+		func() string {
+			if len(where) > 0 {
+				return "WHERE " + strings.Join(where, " AND ")
+			}
+			return ""
+		}(),
+	)
 
 	err := db.Select(&recipes, query, args...)
 	if err != nil {

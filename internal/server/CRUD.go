@@ -91,6 +91,17 @@ func (s *Server) GetAll(c *gin.Context) {
 	c.JSON(http.StatusOK, recipes)
 }
 
+func (s *Server) GetPopular(c *gin.Context) {
+	f := models.Filter{}
+	recipes, err := f.Filter(s.NewDB)
+	if err != nil {
+		print(err.Errors)
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		return
+	}
+	c.JSON(http.StatusOK, recipes)
+}
+
 func (s *Server) AddRecipe(c *gin.Context) {
 	var body models.RecipeSchema
 

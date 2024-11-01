@@ -60,7 +60,7 @@ func NewServer(config *Config) *http.Server {
 	NewServer.Registry.Add(
 		gocron.Job{
 			Job:    w.CreatSelectedAndViewLog,
-			Ticker: time.NewTicker(time.Second),
+			Ticker: time.NewTicker(time.Minute * 2),
 		},
 	)
 
@@ -103,6 +103,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.POST("/create", s.AddRecipe)
 	r.POST("/create_ingredient", s.AddIngredient)
 	r.GET("/get", s.GetAll)
+	r.GET("/popular", s.GetPopular)
 	r.GET("/getbyid/:id", s.GetById)
 	r.PATCH("/update/:id", s.UpdateRecipe)
 	r.DELETE("/delete/:id", s.DeleteRecipe)
