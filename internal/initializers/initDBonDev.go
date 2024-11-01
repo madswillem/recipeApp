@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/recipeApp_Backend_Go/internal/models"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/server"
 	"github.com/madswillem/recipeApp_Backend_Go/internal/tools"
 )
 
-func InitDBonDev(s *server.Server) error {
+func InitDBonDev(db *sqlx.DB) error {
 	var recipes []models.RecipeSchema
 	expected_return_string, err := tools.ReadFileAsString("./test/testdata/create/100_recipes.json")
 	if err != nil {
@@ -21,7 +21,7 @@ func InitDBonDev(s *server.Server) error {
 	}
 
 	for _, recipe := range recipes {
-		err := recipe.Create(s.NewDB)
+		err := recipe.Create(db)
 		if err != nil {
 			fmt.Printf("Recipe %s, Ingredient %s, err: %s", recipe.Name, "", err.Message)
 		}

@@ -1,6 +1,8 @@
 module github.com/madswillem/recipeApp_Backend_Go
 
-go 1.21.11
+go 1.22.8
+
+toolchain go1.23.2
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -33,6 +35,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+	github.com/madswillem/gocron v0.0.0-20241028221703-cd2f027c0e76 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect

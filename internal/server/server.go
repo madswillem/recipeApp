@@ -10,7 +10,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"github.com/madswillem/gocron"
 	"github.com/madswillem/recipeApp_Backend_Go/internal/database"
+	"github.com/madswillem/recipeApp_Backend_Go/internal/initializers"
+	"github.com/madswillem/recipeApp_Backend_Go/internal/workers"
 )
 
 const MethodGET = "GET"
@@ -30,18 +33,36 @@ type Config struct {
 }
 
 type Server struct {
-	port   int
-	NewDB  *sqlx.DB
-	config *Config
+	port     int
+	NewDB    *sqlx.DB
+	Registry *gocron.Registry
+	config   *Config
 }
 
 func NewServer(config *Config) *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	initializers.LoadEnvVariables()
 	NewServer := &Server{
-		port:   port,
-		NewDB:  database.ConnectToDB(&sqlx.Conn{}, "user=mads password=1234 database=test_unexpected_behavior sslmode=disable"),
-		config: config,
+		port: port,
+		NewDB: database.ConnectToDB(
+			&sqlx.Conn{},
+			fmt.Sprintf(
+				"user=%s password=%s database=%s sslmode=disable",
+				os.Getenv("POSTGRES_USER"),
+				os.Getenv("POSTGRES_PASSWORD"),
+				os.Getenv("POSTGRES_DB"),
+			),
+		),
+		Registry: gocron.New(),
+		config:   config,
 	}
+	w := workers.Worker{DB: NewServer.NewDB}
+	NewServer.Registry.Add(
+		gocron.Job{
+			Job:    w.CreatSelectedAndViewLog,
+			Ticker: time.NewTicker(time.Second),
+		},
+	)
 
 	for _, fnc := range NewServer.config.Innit {
 		err := fnc(NewServer)

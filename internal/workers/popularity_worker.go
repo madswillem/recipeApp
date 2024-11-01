@@ -1,8 +1,14 @@
 package workers
 
 import (
+	"sync"
+
 	"github.com/jmoiron/sqlx"
 )
+
+type Worker struct {
+	DB *sqlx.DB
+}
 
 type r_log struct {
 	ID             string `db:"recipe_id"`
@@ -12,25 +18,32 @@ type r_log struct {
 	Selects_change int    `db:"selects_change"`
 }
 
-func CreatSelectedAndViewLog(db *sqlx.DB) error {
+func (w *Worker) CreatSelectedAndViewLog(wg *sync.WaitGroup, done chan bool, err chan error) {
+	println("exec")
 	r := []r_log{}
-	err := db.Select(&r, "SELECT id as recipe_id, selects, views FROM recipes")
-	if err != nil {
+	e := w.DB.Select(&r, "SELECT id as recipe_id, selects, views FROM recipes")
+	if e != nil {
 		print("hi")
-		return err
+		err <- e
+		wg.Done()
+		return
 	}
 	r_l := []r_log{}
-	r_l, err = GetLastLog(db)
-	if err != nil {
+	r_l, e = GetLastLog(w.DB)
+	if e != nil {
 		print("ho")
-		return err
+		err <- e
+		wg.Done()
+		return
 	}
 
 	r_n := CreateDiff(r, r_l)
-	_, err = db.NamedExec(`INSERT INTO recipe_selects_views_log (recipe_id, selects, views, view_change, selects_change)
+	_, e = w.DB.NamedExec(`INSERT INTO recipe_selects_views_log (recipe_id, selects, views, view_change, selects_change)
 		VALUES (:recipe_id, :selects, :views, :view_change, :selects_change)`, r_n)
 
-	return err
+	err <- e
+	done <- true
+	wg.Done()
 }
 
 func GetLastLog(db *sqlx.DB) ([]r_log, error) {
