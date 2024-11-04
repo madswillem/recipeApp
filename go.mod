@@ -1,4 +1,4 @@
-module github.com/madswillem/recipeApp_Backend_Go
+module github.com/madswillem/recipeApp
 
 go 1.22.8
 

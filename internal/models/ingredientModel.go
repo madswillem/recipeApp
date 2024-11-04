@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/error_handler"
 )
 
 type IngredientsSchema struct {
@@ -41,9 +41,9 @@ func (ingredient *IngredientsSchema) Create(tx *sqlx.Tx) *error_handler.APIError
 		return err
 	}
 
-	query := `INSERT INTO recipe_ingredient 
-    (recipe_id, ingredient_id, amount, unit) 
-    VALUES 
+	query := `INSERT INTO recipe_ingredient
+    (recipe_id, ingredient_id, amount, unit)
+    VALUES
     (:recipe_id, :ingredient_id, :amount, :unit)`
 
     _, db_err := tx.NamedExec(query, &ingredient)

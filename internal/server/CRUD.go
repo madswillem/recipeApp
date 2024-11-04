@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/error_handler"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/models"
+	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/models"
 )
 
 func (s *Server) GetAll(c *gin.Context) {
@@ -285,11 +285,12 @@ func (s *Server) Select(c *gin.Context) {
 	if !ok {
 		fmt.Println("type assertion failed")
 	}
+	print(user.ID)
 
 	response := models.RecipeSchema{}
 	response.ID = c.Param("id")
 
-	selectedErr := response.UpdateSelected(1, &user, s.NewDB)
+	selectedErr := response.UpdateSelected(1, nil, s.NewDB)
 	if selectedErr != nil {
 		error_handler.HandleError(c, selectedErr.Code, selectedErr.Message, selectedErr.Errors)
 		return

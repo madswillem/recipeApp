@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/error_handler"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/tools"
+	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/tools"
 )
 
 type UserModel struct {

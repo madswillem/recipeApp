@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/error_handler"
 )
 
 type RecipeSchema struct {
@@ -79,43 +80,38 @@ func (recipe *RecipeSchema) UpdateSelected(change int, user *UserModel, db *sqlx
 		return apiErr
 	}
 
-	apiErr = recipe.Rating.Update(change)
+	var attributes []string
+	apiErr, attributes = UpdateRating(change)
 	if apiErr != nil {
 		return apiErr
 	}
 
 	fmt.Println(recipe.Rating.Overall)
 
-	recipe.Selects += change
-	recipe.Version += 1
-
 	tx := db.MustBegin()
-	tx.MustExec(`UPDATE "recipes" SET selects=$1, version=$2 WHERE id=$3`, recipe.Selects, recipe.Version, recipe.ID)
-	query := `
+	tx.MustExec(`UPDATE "recipes" SET selects=selects + 1, version=version + 1 WHERE id=$1`, recipe.ID)
+
+	query := `UPDATE rating SET ` + strings.Join(attributes, ",") + ` WHERE recipe_id = $1;`
+	println(query)
+	tx.MustExec(query, recipe.ID)
+
+	query = `WITH updated_values AS (
+        SELECT (
+			mon + tue + wed + thu + fri + sat + sun +
+			win + spr + sum + aut +
+			thirtydegree + twentiedegree + tendegree + zerodegree + subzerodegree
+		) / 16.0 AS average
+        FROM rating
+        WHERE recipe_id = $1
+    )
     UPDATE rating
-    SET
-        overall = :overall,
-        mon = :mon,
-        tue = :tue,
-        wed = :wed,
-        thu = :thu,
-        fri = :fri,
-        sat = :sat,
-        sun = :sun,
-        win = :win,
-        spr = :spr,
-        sum = :sum,
-        aut = :aut,
-        thirtydegree = :thirtydegree,
-        twentiedegree = :twentiedegree,
-        tendegree = :tendegree,
-        zerodegree = :zerodegree,
-        subzerodegree = :subzerodegree
-    WHERE id = :id`
-	tx.NamedExec(query, recipe.Rating)
+    SET overall = (SELECT average FROM updated_values)
+    WHERE recipe_id = $1;`
+	tx.MustExec(query, recipe.ID)
+
 	err := tx.Commit()
 	if err != nil {
-		return error_handler.New("Error creating recipe", http.StatusInternalServerError, err)
+		return error_handler.New("Error updating rating", http.StatusInternalServerError, err)
 	}
 
 	if user == nil {

@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/gocron"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/database"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/initializers"
-	"github.com/madswillem/recipeApp_Backend_Go/internal/workers"
+	"github.com/madswillem/recipeApp/internal/database"
+	"github.com/madswillem/recipeApp/internal/initializers"
+	"github.com/madswillem/recipeApp/internal/workers"
 )
 
 const MethodGET = "GET"
