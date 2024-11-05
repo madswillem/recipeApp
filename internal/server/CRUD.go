@@ -1,13 +1,16 @@
 package server
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 	"github.com/madswillem/recipeApp/internal/error_handler"
 	"github.com/madswillem/recipeApp/internal/models"
 )
@@ -211,9 +214,24 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 
 func (s *Server) DeleteRecipe(c *gin.Context) {
 	i := c.Param("id")
-	err := s.NewDB.QueryRowx(`DELETE FROM public.recipes WHERE id = $1`, i).Err()
+
+	result, err := s.NewDB.Exec(`DELETE FROM public.recipes WHERE id = $1`, i)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" { // 22P02 is the code for invalid_text_representation
+			log.Printf("Potential SQL injection or invalid input detected, with ip: %s, and input %s", c.ClientIP(), i)
+			error_handler.HandleError(
+				c,
+				http.StatusBadRequest, fmt.Sprintf(`Value "%s" is not an ID`, i),
+				[]error{errors.New(fmt.Sprintf(`Value "%s" is not an ID`, i))},
+			)
+			return
+		}
 		error_handler.HandleError(c, http.StatusInternalServerError, err.Error(), []error{err})
+		return
+	}
+
+	if rows, _ := result.RowsAffected(); rows <= 0 {
+		error_handler.HandleError(c, http.StatusNotFound, "Recipe doesn't exist", []error{errors.New("recipe doesn't exist")})
 		return
 	}
 
