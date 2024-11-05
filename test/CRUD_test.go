@@ -295,3 +295,82 @@ func TestServer_GetById(t *testing.T) {
 		})
 	}
 }
+
+func TestServer_Delete(t *testing.T) {
+	container, ctx := InitTestContainer(t)
+	URL, err := container.ConnectionString(*ctx, "sslmode=disable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := server.Server{NewDB: database.ConnectToDB(&sqlx.Conn{}, URL)}
+
+	tests := []struct {
+		name           string
+		id             string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "delete recipe with id c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			expectedStatus: http.StatusOK,
+			expectedBody:   "",
+		},
+		{
+			name:           "delete nonexisting recipe",
+			id:             "c5ef5707-1577-4f8c-99ef-0f492e82b895",
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   `{"errMessage":"Recipe doesn't exist","errors":"recipe doesn't exist"}`,
+		},
+		{
+			name:           "test sql injection",
+			id:             `c5ef5707-1577-4f8c-99ef-0f492e82b895"; SELECT * FROM recipes;`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"errMessage":"Value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID","errors":"Value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID"}`,
+		},
+		{
+			name:           "delete recipe with invalid UUID format",
+			id:             "invalid-uuid-format",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"errMessage":"Value \"invalid-uuid-format\" is not an ID","errors":"Value \"invalid-uuid-format\" is not an ID"}`,
+		},
+		{
+			name:           "delete recipe with empty ID",
+			id:             "",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"errMessage":"Value \"\" is not an ID","errors":"Value \"\" is not an ID"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			gin.SetMode(gin.TestMode)
+			c, _ := gin.CreateTestContext(w)
+
+			c.Request = httptest.NewRequest(http.MethodDelete, "/delete", nil)
+			c.Params = gin.Params{gin.Param{Key: "id", Value: tt.id}}
+
+			s.DeleteRecipe(c)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("Expected status code %d but got %d. \n Body: %s", tt.expectedStatus, w.Code, w.Body.String())
+			}
+
+			if tt.expectedBody != "" {
+				if w.Body.String() != tt.expectedBody {
+					t.Errorf("Expected Body: \n %s \n but got: \n %s", tt.expectedBody, w.Body.String())
+				}
+			} else if w.Body.String() != "" {
+				t.Errorf("Unexpected response body: %s \n", w.Body.String())
+			}
+
+			t.Cleanup(func() {
+				err = container.Restore(*ctx)
+				if err != nil {
+					fmt.Printf("Error restoring container: %s\n", err.Error())
+				}
+			})
+		})
+	}
+}
