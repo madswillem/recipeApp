@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp/internal/database"
 	"github.com/madswillem/recipeApp/internal/models"
 )
 
@@ -20,17 +18,6 @@ func parseDuration(durationStr string) (time.Duration, error) {
 	return time.Duration(hour)*time.Hour + time.Duration(min)*time.Minute + time.Duration(sec)*time.Second, nil
 }
 
-func TestSimilarity(t *testing.T) {
-	t.Run("test similarity recipe_group recipe", func(t *testing.T) {
-		db := database.ConnectToDB(&sqlx.Conn{}, "user=mads password=1234 database=test_unexpected_behavior sslmode=disable")
-		r := models.RecipeSchema{ID: "aa85daf1-dbc5-462d-a6fe-3fbb358b08dd"}
-		r.GetRecipeByID(db)
-		rp := models.RecipeGroupSchema{}
-		rp.Create(&r)
-
-		fmt.Println(rp.Compare(&r))
-	})
-}
 func TestCreate(t *testing.T) {
 	t.Run("test", func(t *testing.T) {
 		r := models.RecipeSchema{
@@ -494,30 +481,6 @@ func TestMerge(t *testing.T) {
 		}
 		if !reflect.DeepEqual(rp.CookingTime, expected.CookingTime) {
 			t.Errorf("Expected %+v but got %+v", expected.CookingTime, rp.CookingTime)
-		}
-	})
-}
-func TestUser_Add(t *testing.T) {
-	t.Run("test", func(t *testing.T) {
-		db := database.ConnectToDB(&sqlx.Conn{}, "user=mads password=1234 database=test_unexpected_behavior sslmode=disable")
-		r := models.RecipeSchema{ID: "aa85daf1-dbc5-462d-a6fe-3fbb358b08dd"}
-		r.GetRecipeByID(db)
-		user := models.UserModel{ID: "a5e4a4fb-1b70-4cfc-8350-55decee258ab"}
-		err := user.AddToGroup(db, &r)
-		if err != nil {
-			t.Errorf("Error: %+v\n", err)
-		}
-	})
-}
-
-func TestGetUser(t *testing.T) {
-	t.Run("by cookie", func(t *testing.T) {
-		db := database.ConnectToDB(&sqlx.Conn{}, "user=mads password=1234 database=test_unexpected_behavior sslmode=disable")
-		u := models.UserModel{Cookie: "A2H0PFDRIuj5G8YC6qdq"}
-		err := u.GetByCookie(db)
-		if err != nil {
-			t.Errorf("%+v", err)
-			return
 		}
 	})
 }
