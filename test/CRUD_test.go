@@ -374,3 +374,72 @@ func TestServer_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestServer_Update(t *testing.T) {
+	container, ctx := InitTestContainer(t)
+	URL, err := container.ConnectionString(*ctx, "sslmode=disable")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := server.Server{NewDB: database.ConnectToDB(&sqlx.Conn{}, URL)}
+
+	test := []struct {
+		name           string
+		id             string
+		fieldToChange  string
+		value          string
+		requestBody    string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "test update name",
+			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			fieldToChange:  "name",
+			value:          "test",
+			requestBody:    `{"name":"test"}`,
+			expectedStatus: http.StatusOK,
+			expectedBody:   "",
+		},
+	}
+
+	for _, tt := range test {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			gin.SetMode(gin.TestMode)
+			c, _ := gin.CreateTestContext(w)
+
+			c.Request = httptest.NewRequest(http.MethodPatch, "/update", strings.NewReader(tt.requestBody))
+			c.Request.Header.Set("Content-Type", "application/json")
+			c.Params = gin.Params{gin.Param{Key: "id", Value: tt.id}}
+
+			s.UpdateRecipe(c)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("Expected status code %d but got %d. \n Body: %s", tt.expectedStatus, w.Code, w.Body.String())
+			}
+
+			if tt.expectedBody != w.Body.String() {
+				t.Errorf("Expected body %s but go %s", tt.expectedBody, w.Body.String())
+			}
+
+			if tt.fieldToChange != "" {
+				var v string
+				err := s.NewDB.Get(&v, fmt.Sprintf("SELECT %s FROM recipes WHERE id=$1;", tt.fieldToChange), tt.id)
+				if err != nil {
+					t.Errorf("Unexpected error: %e", err)
+				}
+				if v != tt.value {
+					t.Errorf("Expected name to be '%s' but got '%s'", tt.value, v)
+				}
+			}
+
+			t.Cleanup(func() {
+				err = container.Restore(*ctx)
+				if err != nil {
+					fmt.Printf("Error restoring container: %s\n", err.Error())
+				}
+			})
+		})
+	}
+}

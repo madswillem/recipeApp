@@ -194,7 +194,7 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 
 	if len(setParts) == 0 {
 		// No fields to body
-		error_handler.HandleError(c, http.StatusExpectationFailed, "Nothing to update", []error{})
+		error_handler.HandleError(c, http.StatusExpectationFailed, "Nothing to update", []error{errors.New(fmt.Sprintf("no set parts %+v", body))})
 		return
 	}
 
