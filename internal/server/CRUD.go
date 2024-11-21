@@ -157,11 +157,16 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 
 	i := c.Param("id")
 
-	c.ShouldBindJSON(&body)
+	err := c.ShouldBindJSON(&body)
+	if err != nil {
+		error_handler.HandleError(c, http.StatusBadRequest, "Couldn't bind body", []error{err})
+		return
+	}
 
 	tx, err := s.NewDB.Beginx()
 	if err != nil {
 		error_handler.HandleError(c, http.StatusInternalServerError, "Error initiating transaction", []error{err})
+		return
 	}
 
 	var setParts []string
@@ -193,13 +198,11 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 	}
 
 	if len(setParts) == 0 {
-		// No fields to body
 		error_handler.HandleError(c, http.StatusExpectationFailed, "Nothing to update", []error{errors.New(fmt.Sprintf("no set parts %+v", body))})
 		return
 	}
 
 	query := "UPDATE recipes SET " + strings.Join(setParts, ", ") + " WHERE id = $" + strconv.Itoa(len(args)+1)
-	fmt.Println(query)
 	args = append(args, i)
 
 	_, err = tx.Exec(query, args...)

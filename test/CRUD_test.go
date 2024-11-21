@@ -401,6 +401,31 @@ func TestServer_Update(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedBody:   "",
 		},
+		{
+			name:           "test update cuisine",
+			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			fieldToChange:  "cuisine",
+			value:          "test",
+			requestBody:    `{"cuisine":"test"}`,
+			expectedStatus: http.StatusOK,
+			expectedBody:   "",
+		},
+		{
+			name:           "test update yield",
+			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			fieldToChange:  "yield",
+			value:          "10",
+			requestBody:    `{"yield":10}`,
+			expectedStatus: http.StatusOK,
+			expectedBody:   "",
+		},
+		{
+			name:           "test bad input",
+			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			requestBody:    `{"name":"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"errMessage":"Couldn't bind body","errors":"unexpected EOF"}`,
+		},
 	}
 
 	for _, tt := range test {
@@ -420,7 +445,7 @@ func TestServer_Update(t *testing.T) {
 			}
 
 			if tt.expectedBody != w.Body.String() {
-				t.Errorf("Expected body %s but go %s", tt.expectedBody, w.Body.String())
+				t.Errorf("Expected body %s but got %s", tt.expectedBody, w.Body.String())
 			}
 
 			if tt.fieldToChange != "" {
@@ -429,8 +454,8 @@ func TestServer_Update(t *testing.T) {
 				if err != nil {
 					t.Errorf("Unexpected error: %e", err)
 				}
-				if v != tt.value {
-					t.Errorf("Expected name to be '%s' but got '%s'", tt.value, v)
+				if string(v) != tt.value {
+					t.Errorf("Expected %s to be '%s' but got '%s'", tt.fieldToChange, tt.value, v)
 				}
 			}
 
