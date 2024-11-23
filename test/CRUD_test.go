@@ -420,6 +420,15 @@ func TestServer_Update(t *testing.T) {
 			expectedBody:   "",
 		},
 		{
+			name:           "test update yiledunit",
+			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			fieldToChange:  "yield_unit",
+			value:          "10",
+			requestBody:    `{"yield_unit":"10"}`,
+			expectedStatus: http.StatusOK,
+			expectedBody:   "",
+		},
+		{
 			name:           "test bad input",
 			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
 			requestBody:    `{"name":"}`,
