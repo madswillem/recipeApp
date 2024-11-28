@@ -25,7 +25,7 @@ type RecipeGroupSchema struct {
 	DietVec         []float64
 	TechniquesDict  map[string]int
 	TechniquesVec   []float64
-	Recipes         []RecipeSchema
+	RecipeIDs       []string
 }
 
 func (rp *RecipeGroupSchema) Value() (driver.Value, error) {
@@ -47,7 +47,7 @@ func (rp *RecipeGroupSchema) Create(r *RecipeSchema) {
 	rp.IngredientDict = h.OutputMatrix.Dict
 	rp.IngredientVec = tools.AverageVectors(h.OutputMatrix.Vec...)
 
-	rp.Recipes = append(rp.Recipes, *r)
+	rp.RecipeIDs = append(rp.RecipeIDs, r.ID)
 
 	h = gompare.New(gompare.Config{})
 	h.Add(r.Cuisine)
@@ -154,7 +154,7 @@ func (rp *RecipeGroupSchema) Compare(r *RecipeSchema) float64 {
 }
 
 func (rp *RecipeGroupSchema) Add(r *RecipeSchema) {
-	rp.Recipes = append(rp.Recipes, *r)
+	rp.RecipeIDs = append(rp.RecipeIDs, r.ID)
 	ingredient_list := make([]string, len(r.Ingredients))
 	for n, i := range r.Ingredients {
 		ingredient_list[n] = i.Name
@@ -168,9 +168,9 @@ func (rp *RecipeGroupSchema) Add(r *RecipeSchema) {
 	h.InputStrings = make([][]string, 1)
 	h.InputStrings[0] = ingredient_list
 	h.NormalMatrix()
-	vec := tools.AddVectors(tools.MultiplyVectorByNum(float64(len(rp.Recipes)), rp.IngredientVec), h.OutputMatrix.Vec[0])
+	vec := tools.AddVectors(tools.MultiplyVectorByNum(float64(len(rp.RecipeIDs)), rp.IngredientVec), h.OutputMatrix.Vec[0])
 	rp.IngredientDict = h.OutputMatrix.Dict
-	rp.IngredientVec = tools.MultiplyVectorByNum(1.0/float64(len(rp.Recipes)+1), vec)
+	rp.IngredientVec = tools.MultiplyVectorByNum(1.0/float64(len(rp.RecipeIDs)+1), vec)
 
 	steps := make([]string, len(r.Steps))
 	for i, s := range r.Steps {
@@ -184,9 +184,9 @@ func (rp *RecipeGroupSchema) Add(r *RecipeSchema) {
 	})
 	h.Add(prep)
 	h.NormalMatrix()
-	vec = tools.AddVectors(tools.MultiplyVectorByNum(float64(len(rp.Recipes)), rp.PreperationVec), h.OutputMatrix.Vec[0])
+	vec = tools.AddVectors(tools.MultiplyVectorByNum(float64(len(rp.RecipeIDs)), rp.PreperationVec), h.OutputMatrix.Vec[0])
 	rp.PreperationDict = h.OutputMatrix.Dict
-	rp.PreperationVec = tools.MultiplyVectorByNum(1.0/float64(len(rp.Recipes)+1), vec)
+	rp.PreperationVec = tools.MultiplyVectorByNum(1.0/float64(len(rp.RecipeIDs)+1), vec)
 
 	h = gompare.New(gompare.Config{
 		Matrix: gompare.Matrix{
@@ -195,18 +195,18 @@ func (rp *RecipeGroupSchema) Add(r *RecipeSchema) {
 	})
 	h.Add(r.Cuisine)
 	h.NormalMatrix()
-	vec = tools.AddVectors(tools.MultiplyVectorByNum(float64(len(rp.Recipes)), rp.CuisineVec), h.OutputMatrix.Vec[0])
+	vec = tools.AddVectors(tools.MultiplyVectorByNum(float64(len(rp.RecipeIDs)), rp.CuisineVec), h.OutputMatrix.Vec[0])
 	rp.CuisineDict = h.OutputMatrix.Dict
-	rp.CuisineVec = tools.MultiplyVectorByNum(1.0/float64(len(rp.Recipes)+1), vec)
+	rp.CuisineVec = tools.MultiplyVectorByNum(1.0/float64(len(rp.RecipeIDs)+1), vec)
 
 	var hour, min, sec int
 	fmt.Sscanf(r.PrepTime, "%d:%d:%d", &hour, &min, &sec)
 	rp.PrepTime += time.Duration(hour)*time.Hour + time.Duration(min)*time.Minute + time.Duration(sec)*time.Second
 	fmt.Println(time.Duration(hour)*time.Hour + time.Duration(min)*time.Minute + time.Duration(sec)*time.Second)
-	rp.PrepTime /= time.Duration(len(rp.Recipes) + 1)
+	rp.PrepTime /= time.Duration(len(rp.RecipeIDs) + 1)
 	fmt.Sscanf(r.CookingTime, "%d:%d:%d", &hour, &min, &sec)
 	rp.CookingTime += time.Duration(hour)*time.Hour + time.Duration(min)*time.Minute + time.Duration(sec)*time.Second
-	rp.CookingTime /= time.Duration(len(rp.Recipes) + 1)
+	rp.CookingTime /= time.Duration(len(rp.RecipeIDs) + 1)
 }
 
 func (rp *RecipeGroupSchema) Merge(rp2 *RecipeGroupSchema) {
@@ -214,11 +214,11 @@ func (rp *RecipeGroupSchema) Merge(rp2 *RecipeGroupSchema) {
 	m := tools.MergeMatrix(tools.Matrix{
 		Dict: rp.IngredientDict,
 		Vec:  rp.IngredientVec,
-		Len:  len(rp.Recipes),
+		Len:  len(rp.RecipeIDs),
 	}, tools.Matrix{
 		Dict: rp2.IngredientDict,
 		Vec:  rp2.IngredientVec,
-		Len:  len(rp2.Recipes),
+		Len:  len(rp2.RecipeIDs),
 	})
 
 	rp.IngredientDict = m.Dict
@@ -228,11 +228,11 @@ func (rp *RecipeGroupSchema) Merge(rp2 *RecipeGroupSchema) {
 	m = tools.MergeMatrix(tools.Matrix{
 		Dict: rp.CuisineDict,
 		Vec:  rp.CuisineVec,
-		Len:  len(rp.Recipes),
+		Len:  len(rp.RecipeIDs),
 	}, tools.Matrix{
 		Dict: rp2.CuisineDict,
 		Vec:  rp2.CuisineVec,
-		Len:  len(rp2.Recipes),
+		Len:  len(rp2.RecipeIDs),
 	})
 
 	rp.CuisineDict = m.Dict
@@ -242,11 +242,11 @@ func (rp *RecipeGroupSchema) Merge(rp2 *RecipeGroupSchema) {
 	m = tools.MergeMatrix(tools.Matrix{
 		Dict: rp.PreperationDict,
 		Vec:  rp.PreperationVec,
-		Len:  len(rp.Recipes),
+		Len:  len(rp.RecipeIDs),
 	}, tools.Matrix{
 		Dict: rp2.PreperationDict,
 		Vec:  rp2.PreperationVec,
-		Len:  len(rp2.Recipes),
+		Len:  len(rp2.RecipeIDs),
 	})
 
 	rp.PreperationDict = m.Dict
@@ -256,26 +256,26 @@ func (rp *RecipeGroupSchema) Merge(rp2 *RecipeGroupSchema) {
 	m = tools.MergeMatrix(tools.Matrix{
 		Dict: rp.TechniquesDict,
 		Vec:  rp.TechniquesVec,
-		Len:  len(rp.Recipes),
+		Len:  len(rp.RecipeIDs),
 	}, tools.Matrix{
 		Dict: rp2.TechniquesDict,
 		Vec:  rp2.TechniquesVec,
-		Len:  len(rp2.Recipes),
+		Len:  len(rp2.RecipeIDs),
 	})
 
 	rp.TechniquesDict = m.Dict
 	rp.TechniquesVec = m.Vec
 
 	//Merge PrepTime
-	rp.PrepTime *= time.Duration(len(rp.Recipes))
-	rp.PrepTime += rp2.PrepTime * time.Duration(len(rp2.Recipes))
-	rp.PrepTime /= time.Duration(len(rp.Recipes) + len(rp2.Recipes))
+	rp.PrepTime *= time.Duration(len(rp.RecipeIDs))
+	rp.PrepTime += rp2.PrepTime * time.Duration(len(rp2.RecipeIDs))
+	rp.PrepTime /= time.Duration(len(rp.RecipeIDs) + len(rp2.RecipeIDs))
 
 	//Merge CookingTime
-	rp.CookingTime *= time.Duration(len(rp.Recipes))
-	rp.CookingTime += rp2.CookingTime * time.Duration(len(rp2.Recipes))
-	rp.CookingTime /= time.Duration(len(rp.Recipes) + len(rp2.Recipes))
+	rp.CookingTime *= time.Duration(len(rp.RecipeIDs))
+	rp.CookingTime += rp2.CookingTime * time.Duration(len(rp2.RecipeIDs))
+	rp.CookingTime /= time.Duration(len(rp.RecipeIDs) + len(rp2.RecipeIDs))
 
-	//Merge Recipes
-	rp.Recipes = append(rp.Recipes, rp2.Recipes...)
+	//Merge RecipeIDs
+	rp.RecipeIDs = append(rp.RecipeIDs, rp2.RecipeIDs...)
 }
