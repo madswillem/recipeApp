@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/madswillem/recipeApp/internal/models"
 )
 
@@ -158,6 +159,108 @@ func TestCreate(t *testing.T) {
 		}
 		rp := models.RecipeGroupSchema{}
 		rp.Create(&r)
+		expected := models.RecipeGroupSchema{
+			IngredientDict: map[string]int{"Black pepper": 7, "Egg": 4, "Garlic": 6, "Pancetta": 3, "Parmesan cheese": 5, "Spaghetti": 2, "salt": 1},
+			IngredientVec:  []float64{1, 1, 1, 1, 1, 1, 1},
+			PreperationDict: map[string]int{
+				"1":           12,
+				"a":           22,
+				"about":       51,
+				"according":   4,
+				"add":         28,
+				"al":          9,
+				"and":         27,
+				"aside":       34,
+				"black":       78,
+				"bowl":        36,
+				"cheese":      42,
+				"combine":     55,
+				"combined":    44,
+				"consistency": 72,
+				"cook":        1,
+				"cooked":      53,
+				"cooks":       20,
+				"creamy":      63,
+				"create":      62,
+				"crispy":      30,
+				"cup":         13,
+				"dente":       10,
+				"desired":     71,
+				"directions":  7,
+				"drain":       18,
+				"egg":         58,
+				"eggs":        39,
+				"extra":       83,
+				"fragrant":    50,
+				"freshly":     76,
+				"from":        32,
+				"garlic":      49,
+				"grated":      40,
+				"ground":      77,
+				"heat":        21,
+				"if":          65,
+				"immediately": 82,
+				"in":          35,
+				"is":          66,
+				"large":       23,
+				"little":      69,
+				"low":         47,
+				"medium":      26,
+				"minced":      48,
+				"minute":      52,
+				"mixture":     59,
+				"of":          14,
+				"on":          84,
+				"over":        25,
+				"package":     6,
+				"pancetta":    29,
+				"parmesan":    41,
+				"pasta":       15,
+				"pepper":      79,
+				"pour":        57,
+				"quickly":     56,
+				"rapidly":     61,
+				"reached":     73,
+				"remove":      31,
+				"reserve":     11,
+				"reserved":    70,
+				"return":      45,
+				"salt":        75,
+				"sauce":       64,
+				"season":      74,
+				"serve":       81,
+				"set":         33,
+				"skillet":     24,
+				"spaghetti":   3,
+				"taste":       80,
+				"the":         2,
+				"then":        17,
+				"thick":       68,
+				"to":          5,
+				"together":    38,
+				"too":         67,
+				"top":         85,
+				"toss":        54,
+				"tossing":     60,
+				"until":       8,
+				"water":       16,
+				"well":        43,
+				"while":       19,
+				"whisk":       37,
+				"with":        46,
+			},
+			PreperationVec: []float64{3, 13, 1, 1, 6, 1, 1, 5, 1, 1, 1, 2, 1, 1, 5, 2, 2, 1, 1, 1, 5, 4, 1, 4, 1, 1, 9, 4, 3, 1, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 1, 4, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			CuisineDict:    map[string]int{"italian": 1},
+			CuisineVec:     []float64{1},
+			PrepTime:       time.Hour,
+			CookingTime:    time.Hour,
+			TechniquesDict: map[string]int{"": 1},
+			TechniquesVec:  []float64{7},
+			RecipeIDs:      []string{"aa85daf1-dbc5-462d-a6fe-3fbb358b08dd"},
+		}
+		if d := cmp.Diff(expected, rp); d != "" {
+			t.Error(d)
+		}
 	})
 }
 func TestAdd(t *testing.T) {
@@ -298,6 +401,19 @@ func TestAdd(t *testing.T) {
 				},
 			},
 		}
+		expected := models.RecipeGroupSchema{
+			IngredientDict:  map[string]int{"Black pepper": 7, "Egg": 4, "Garlic": 6, "Pancetta": 3, "Parmesan cheese": 5, "Spaghetti": 2, "rice": 8, "salt": 1, "tomato_puree": 9, "zucchine": 10},
+			IngredientVec:   []float64{0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333},
+			PreperationDict: map[string]int{"1": 12, "a": 22, "about": 51, "according": 4, "add": 28, "al": 9, "and": 27, "aside": 34, "black": 78, "bowl": 36, "cheese": 42, "color": 102, "combine": 55, "combined": 44, "consistency": 72, "cook": 1, "cooked": 53, "cooks": 20, "creamy": 63, "create": 62, "crispy": 30, "cup": 13, "dente": 10, "desired": 71, "directions": 7, "drain": 18, "egg": 58, "eggs": 39, "extra": 83, "fragrant": 50, "freshly": 76, "from": 32, "fry": 91, "garlic": 49, "grated": 40, "ground": 77, "have": 94, "heat": 21, "if": 65, "immediately": 82, "in": 35, "into": 88, "is": 66, "krisp": 96, "large": 23, "let": 90, "light": 95, "little": 69, "low": 47, "medium": 26, "minced": 48, "minute": 52, "mix": 97, "mixture": 59, "nice": 100, "of": 14, "on": 84, "over": 25, "package": 6, "pan": 89, "pancetta": 29, "parmesan": 41, "pasta": 15, "pepper": 79, "pour": 57, "puree": 99, "put": 86, "quickly": 56, "rapidly": 61, "reached": 73, "red": 101, "remove": 31, "reserve": 11, "reserved": 70, "return": 45, "rice": 87, "salt": 75, "sauce": 64, "season": 74, "serve": 81, "set": 33, "skillet": 24, "spaghetti": 3, "taste": 80, "the": 2, "then": 17, "thick": 68, "til": 92, "to": 5, "together": 38, "tomato": 98, "too": 67, "top": 85, "toss": 54, "tossing": 60, "until": 8, "water": 16, "well": 43, "while": 19, "whisk": 37, "with": 46, "you": 93, "zucchini": 103},
+			PreperationVec:  []float64{2, 9, 0.6666666666666666, 0.6666666666666666, 4, 0.6666666666666666, 0.6666666666666666, 3.6666666666666665, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 1.3333333333333333, 0.6666666666666666, 0.6666666666666666, 3.333333333333333, 1.3333333333333333, 1.3333333333333333, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 3.333333333333333, 3.333333333333333, 0.6666666666666666, 2.6666666666666665, 0.6666666666666666, 0.6666666666666666, 7, 3.333333333333333, 2, 0.6666666666666666, 1.3333333333333333, 1.3333333333333333, 0.6666666666666666, 0.6666666666666666, 1.3333333333333333, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 1.3333333333333333, 2, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 2.6666666666666665, 0.6666666666666666, 0.6666666666666666, 1.3333333333333333, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 1.3333333333333333, 1.3333333333333333, 1.3333333333333333, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 1.3333333333333333, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 1, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.6666666666666666, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.6666666666666666, 0.6666666666666666, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333, 0.3333333333333333},
+			CuisineDict:     map[string]int{"italian": 1, "indien": 2},
+			CuisineVec:      []float64{0.6666666666666666, 0.3333333333333333},
+			PrepTime:        time.Minute*21 + time.Second*20,
+			CookingTime:     time.Minute*21 + time.Second*20,
+			TechniquesDict:  map[string]int{"": 1},
+			TechniquesVec:   []float64{7},
+			RecipeIDs:       []string{"aa85daf1-dbc5-462d-a6fe-3fbb358b08dd", ""},
+		}
 		rp := models.RecipeGroupSchema{}
 		rp.Create(&r)
 
@@ -330,15 +446,18 @@ func TestAdd(t *testing.T) {
 			CookingTime: "00:04:00",
 			Cuisine:     "Indien",
 		})
+
 		//fmt.Println(rp.PreperationDict)
-		fmt.Println(rp.PrepTime)
+		if d := cmp.Diff(expected, rp); d != "" {
+			t.Error(d)
+		}
 	})
 }
 func TestMerge(t *testing.T) {
 	t.Run("test", func(t *testing.T) {
 		rp := models.RecipeGroupSchema{
-			Recipes: []models.RecipeSchema{
-				{ID: "string1"},
+			RecipeIDs: []string{
+				"string1",
 			},
 			IngredientDict: map[string]int{
 				"hi":  1,
@@ -371,8 +490,8 @@ func TestMerge(t *testing.T) {
 			CookingTime: time.Hour * 3,
 		}
 		rp2 := models.RecipeGroupSchema{
-			Recipes: []models.RecipeSchema{
-				{ID: "string2"},
+			RecipeIDs: []string{
+				"string2",
 			},
 			IngredientDict: map[string]int{
 				"hi":      1,
@@ -406,9 +525,9 @@ func TestMerge(t *testing.T) {
 		}
 
 		expected := models.RecipeGroupSchema{
-			Recipes: []models.RecipeSchema{
-				{ID: "string1"},
-				{ID: "string2"},
+			RecipeIDs: []string{
+				"string1",
+				"string2",
 			},
 			IngredientDict: map[string]int{
 				"hi":      1,
@@ -449,8 +568,8 @@ func TestMerge(t *testing.T) {
 
 		rp.Merge(&rp2)
 
-		if !reflect.DeepEqual(rp.Recipes, expected.Recipes) {
-			t.Errorf("Expected %+v but got %+v", expected.Recipes, rp.Recipes)
+		if !reflect.DeepEqual(rp.RecipeIDs, expected.RecipeIDs) {
+			t.Errorf("Expected %+v but got %+v", expected.RecipeIDs, rp.RecipeIDs)
 		}
 		if !reflect.DeepEqual(rp.IngredientDict, expected.IngredientDict) {
 			t.Errorf("Expected %+v but got %+v", expected.IngredientDict, rp.IngredientDict)
