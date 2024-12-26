@@ -24,7 +24,7 @@ import (
 
 func assertRecipesEqual(t *testing.T, expected models.RecipeSchema, actual models.RecipeSchema) {
 	if actual.ID == "" || expected.ID == "" {
-		t.Errorf(fmt.Sprintf("%s (actual.ID) != %s (expected.ID)", actual.ID, expected.ID))
+		t.Errorf("%s (actual.ID) != %s (expected.ID)", actual.ID, expected.ID)
 
 		return
 	}
@@ -307,38 +307,51 @@ func TestServer_Delete(t *testing.T) {
 	tests := []struct {
 		name           string
 		id             string
+		user           models.UserModel
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			name:           "delete recipe with id c4ef5707-1577-4f8c-99ef-0f492e82b895",
 			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusOK,
 			expectedBody:   "",
 		},
 		{
 			name:           "delete nonexisting recipe",
 			id:             "c5ef5707-1577-4f8c-99ef-0f492e82b895",
+			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   `{"errMessage":"Recipe doesn't exist","errors":"recipe doesn't exist"}`,
 		},
 		{
 			name:           "test sql injection",
 			id:             `c5ef5707-1577-4f8c-99ef-0f492e82b895"; SELECT * FROM recipes;`,
+			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"errMessage":"Value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID","errors":"Value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID"}`,
+			expectedBody:   `{"errMessage":"Value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID","errors":"value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID"}`,
 		},
 		{
 			name:           "delete recipe with invalid UUID format",
 			id:             "invalid-uuid-format",
+			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"errMessage":"Value \"invalid-uuid-format\" is not an ID","errors":"Value \"invalid-uuid-format\" is not an ID"}`,
+			expectedBody:   `{"errMessage":"Value \"invalid-uuid-format\" is not an ID","errors":"value \"invalid-uuid-format\" is not an ID"}`,
 		},
 		{
 			name:           "delete recipe with empty ID",
 			id:             "",
+			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"errMessage":"Value \"\" is not an ID","errors":"Value \"\" is not an ID"}`,
+			expectedBody:   `{"errMessage":"Value \"\" is not an ID","errors":"value \"\" is not an ID"}`,
+		},
+		{
+			name:           "delete recipe with unauthorized user",
+			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
+			user:           models.UserModel{ID: "wrong-user-id"},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   `{"errMessage":"User is not the owner of the recipe","errors":"user is not the owner of the recipe"}`,
 		},
 	}
 
@@ -350,6 +363,7 @@ func TestServer_Delete(t *testing.T) {
 
 			c.Request = httptest.NewRequest(http.MethodDelete, "/delete", nil)
 			c.Params = gin.Params{gin.Param{Key: "id", Value: tt.id}}
+			c.Set("user", tt.user)
 
 			s.DeleteRecipe(c)
 

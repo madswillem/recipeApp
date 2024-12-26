@@ -14,6 +14,8 @@ import (
 type UserModel struct {
 	ID           string    `database:"id"`
 	CreatedAt    time.Time `db:"created_at"`
+	Email        string    `db:"email" json:"email"`
+	Password     string    `db:"password" json:"-"`
 	LastLogin    time.Time `database:"last_login"`
 	Cookie       string    `database:"cookie"`
 	IP           string    `database:"ip"`

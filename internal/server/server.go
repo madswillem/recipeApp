@@ -12,12 +12,20 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/gocron"
 	"github.com/madswillem/recipeApp/internal/database"
+	"github.com/madswillem/recipeApp/internal/error_handler"
 	"github.com/madswillem/recipeApp/internal/initializers"
+	"github.com/madswillem/recipeApp/internal/models"
 	"github.com/madswillem/recipeApp/internal/workers"
 )
 
 const MethodGET = "GET"
 const MethodPost = "POST"
+
+type Auth interface {
+	Login(c *gin.Context, db *sqlx.DB)
+	Signup(c *gin.Context, db *sqlx.DB)
+	Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, models.UserModel)
+}
 
 type InnitFuncs func(*Server) error
 type ExtraControllers struct {
@@ -29,6 +37,7 @@ type ExtraControllers struct {
 
 type Config struct {
 	Innit       []InnitFuncs
+	Auth        Auth
 	Controllers []ExtraControllers
 }
 
@@ -36,6 +45,7 @@ type Server struct {
 	port     int
 	NewDB    *sqlx.DB
 	Registry *gocron.Registry
+	Auth     Auth
 	config   *Config
 }
 
@@ -64,6 +74,10 @@ func NewServer(config *Config) *http.Server {
 		},
 	)
 
+	if config.Auth != nil {
+		NewServer.Auth = config.Auth
+	}
+
 	for _, fnc := range NewServer.config.Innit {
 		err := fnc(NewServer)
 		fmt.Println(err)
@@ -91,6 +105,15 @@ func (s *Server) RegisterRoutes() http.Handler {
 	})
 	r.Use(s.CORSMiddleware())
 
+	if s.Auth != nil {
+		r.POST("/login", func(c *gin.Context) {
+			s.Auth.Login(c, s.NewDB)
+		})
+		r.POST("/signup", func(c *gin.Context) {
+			s.Auth.Signup(c, s.NewDB)
+		})
+	}
+
 	for _, controller := range s.config.Controllers {
 		if controller.Route == MethodGET {
 			r.GET(controller.Route, controller.Function)
@@ -100,13 +123,13 @@ func (s *Server) RegisterRoutes() http.Handler {
 		}
 	}
 
-	r.POST("/create", s.AddRecipe)
+	r.POST("/create", s.UserMiddleware, s.AddRecipe)
 	r.POST("/create_ingredient", s.AddIngredient)
 	r.GET("/get", s.GetAll)
 	r.GET("/popular", s.GetPopular)
 	r.GET("/getbyid/:id", s.GetById)
 	r.PATCH("/update/:id", s.UpdateRecipe)
-	r.DELETE("/delete/:id", s.DeleteRecipe)
+	r.DELETE("/delete/:id", s.UserMiddleware, s.DeleteRecipe)
 	r.POST("/filter", s.Filter)
 	r.GET("/select/:id", s.UserMiddleware, s.Select)
 	r.GET("/deselect/:id", s.UserMiddleware, s.Deselect)
