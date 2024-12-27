@@ -27,6 +27,8 @@ type Auth interface {
 	Login(c *gin.Context, db *sqlx.DB)
 	Signup(c *gin.Context, db *sqlx.DB)
 	Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, models.UserModel)
+	Logout(c *gin.Context)
+	AccessControl(sub string, obj string, act string, db *sqlx.DB) (bool, *error_handler.APIError)
 }
 
 type InnitFuncs func(*Server) error
@@ -118,6 +120,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.POST("/signup", func(c *gin.Context) {
 			s.Auth.Signup(c, s.NewDB)
 		})
+		r.GET("/logout", s.Auth.Logout)
 	}
 
 	for _, controller := range s.config.Controllers {

@@ -139,3 +139,21 @@ func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError,
 
 	return error_handler.New("Invalid token", http.StatusUnauthorized, errors.New("invalid token")), models.UserModel{}
 }
+
+func (a *Auth) Logout(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
+}
+
+func (a *Auth) AccessControl(sub string, obj string, act string, db *sqlx.DB) (bool, *error_handler.APIError) {
+	recipe := models.RecipeSchema{ID: obj}
+	owner, ownererr := recipe.GetAuthor(db)
+	if ownererr != nil {
+		return false, ownererr
+	}
+	if owner != sub {
+		return false, error_handler.New("Unauthorized", http.StatusUnauthorized, errors.New("Unauthorized"))
+	}
+
+	return true, nil
+}
