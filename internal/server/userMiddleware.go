@@ -8,8 +8,11 @@ import (
 func (s *Server) UserMiddleware(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
-		error_handler.HandleError(c, 401, "Authorization header required", nil)
-		return
+		tokenString, _ = c.Cookie("token")
+		if tokenString == "" {
+			error_handler.HandleError(c, 401, "Authorization header required", nil)
+			return
+		}
 	}
 
 	err, user := s.Auth.Verify(s.NewDB, tokenString)
