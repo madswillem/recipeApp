@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/gocron"
+	"github.com/madswillem/recipeApp/internal/auth"
 	"github.com/madswillem/recipeApp/internal/database"
 	"github.com/madswillem/recipeApp/internal/error_handler"
 	"github.com/madswillem/recipeApp/internal/initializers"
@@ -76,6 +78,9 @@ func NewServer(config *Config) *http.Server {
 
 	if config.Auth != nil {
 		NewServer.Auth = config.Auth
+	} else {
+		log.Default().Println("No Auth provided")
+		NewServer.Auth = auth.NewAuth([]byte("secret"))
 	}
 
 	for _, fnc := range NewServer.config.Innit {
@@ -106,6 +111,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(s.CORSMiddleware())
 
 	if s.Auth != nil {
+		print("Auth")
 		r.POST("/login", func(c *gin.Context) {
 			s.Auth.Login(c, s.NewDB)
 		})

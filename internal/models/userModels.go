@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -70,6 +71,18 @@ func (user *UserModel) Create(db *sqlx.DB, ip string) *error_handler.APIError {
 		return error_handler.New("Error inserting user: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
+	return nil
+}
+
+func (user *UserModel) GetFromGinContext(data any, exists bool) *error_handler.APIError {
+	if data == nil {
+		return error_handler.New("User not logged in", http.StatusUnauthorized, errors.New("user not logged in"))
+	}
+	userData, ok := data.(UserModel)
+	if !ok {
+		return error_handler.New("User not of type UserModel", http.StatusUnauthorized, errors.New("user not of type UserModel"))
+	}
+	*user = userData
 	return nil
 }
 

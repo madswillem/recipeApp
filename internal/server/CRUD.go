@@ -1,7 +1,6 @@
 package server
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -115,7 +114,15 @@ func (s *Server) AddRecipe(c *gin.Context) {
 		return
 	}
 
-	err := body.Create(s.NewDB)
+	user := models.UserModel{}
+	err := user.GetFromGinContext(c.Get("user"))
+	if err != nil {
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		return
+	}
+
+	body.Author = user.ID
+	err = body.Create(s.NewDB)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
@@ -214,39 +221,21 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 }
 
 func (s *Server) DeleteRecipe(c *gin.Context) {
-	user, _ := c.Get("user")
-	if user == nil {
-		error_handler.HandleError(c, http.StatusUnauthorized, "User not logged in", []error{errors.New("user not logged in")})
-		c.AbortWithStatus(http.StatusUnauthorized)
+	user := models.UserModel{}
+	usrerr := user.GetFromGinContext(c.Get("user"))
+	if usrerr != nil {
+		error_handler.HandleError(c, usrerr.Code, usrerr.Message, usrerr.Errors)
 		return
 	}
-	userModel, ok := user.(models.UserModel)
-	if !ok {
-		error_handler.HandleError(c, http.StatusInternalServerError, "User not of type UserModel", []error{errors.New("user not of type UserModel")})
-		return
-	}
-	i := c.Param("id")
 
-	var owner string
-	err := s.NewDB.Get(&owner, `SELECT author FROM recipes WHERE id = $1`, i)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			error_handler.HandleError(c, http.StatusNotFound, "Recipe doesn't exist", []error{errors.New("recipe doesn't exist")})
-			return
-		}
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" { // 22P02 is the code for invalid_text_representation
-			log.Printf("Potential SQL injection or invalid input detected, with ip: %s, and input %s", c.ClientIP(), i)
-			error_handler.HandleError(
-				c,
-				http.StatusBadRequest, fmt.Sprintf(`Value "%s" is not an ID`, i),
-				[]error{fmt.Errorf(`value "%s" is not an ID`, i)},
-			)
-			return
-		}
-		error_handler.HandleError(c, http.StatusInternalServerError, err.Error(), []error{err})
+	i := c.Param("id")
+	recipe := models.RecipeSchema{ID: i}
+	owner, ownererr := recipe.GetAuthor(s.NewDB)
+	if ownererr != nil {
+		error_handler.HandleError(c, ownererr.Code, ownererr.Message, ownererr.Errors)
 		return
 	}
-	if owner != userModel.ID {
+	if owner != user.ID {
 		error_handler.HandleError(c, http.StatusUnauthorized, "User is not the owner of the recipe", []error{errors.New("user is not the owner of the recipe")})
 		return
 	}

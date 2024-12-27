@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -36,7 +37,7 @@ func (a *Auth) Signup(c *gin.Context, db *sqlx.DB) {
 
 	// Check if user already exists
 	var count int
-	err := db.Get(&count, "SELECT COUNT(*) FROM users WHERE email = $1", input.Email)
+	err := db.Get(&count, "SELECT COUNT(*) FROM public.user WHERE email = $1", input.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
@@ -55,20 +56,18 @@ func (a *Auth) Signup(c *gin.Context, db *sqlx.DB) {
 
 	// Create new user
 	user := &models.UserModel{
-		Email:     input.Email,
-		Password:  string(hashedPassword),
-		CreatedAt: time.Now(),
+		Email:    input.Email,
+		Password: string(hashedPassword),
 	}
 
 	// Insert into database
-	query := `INSERT INTO users (email, password, created_at) VALUES ($1, $2, $3) RETURNING id`
-	err = db.QueryRow(query, user.Email, user.Password, user.CreatedAt).Scan(&user.ID)
+	_, err = db.Exec(`INSERT INTO public.user (email, password) VALUES ($1, $2)`, user.Email, user.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"user": user})
+	c.Status(http.StatusCreated)
 }
 
 func (a *Auth) Login(c *gin.Context, db *sqlx.DB) {
@@ -83,8 +82,9 @@ func (a *Auth) Login(c *gin.Context, db *sqlx.DB) {
 	}
 
 	var user models.UserModel
-	err := db.Get(&user, "SELECT * FROM users WHERE email = $1", input.Email)
+	err := db.Get(&user, "SELECT id, password, email FROM public.user WHERE email = $1", input.Email)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -92,6 +92,7 @@ func (a *Auth) Login(c *gin.Context, db *sqlx.DB) {
 	// Compare password with stored hash
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -105,10 +106,12 @@ func (a *Auth) Login(c *gin.Context, db *sqlx.DB) {
 
 	tokenString, err := token.SignedString(a.jwtKey)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating token"})
 		return
 	}
 
+	c.SetCookie("token", tokenString, 60*60*24, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
 
@@ -126,15 +129,11 @@ func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError,
 
 	// Extract claims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userID := claims["user_id"].(string)
-
-		// Get user from database
-		var user models.UserModel
-		err := db.Get(&user, "SELECT * FROM users WHERE id = $1", userID)
-		if err != nil {
-			return error_handler.New("Database error", http.StatusInternalServerError, err), models.UserModel{}
+		// Create user from claims
+		user := models.UserModel{
+			ID:    claims["user_id"].(string),
+			Email: claims["email"].(string),
 		}
-
 		return nil, user
 	}
 

@@ -1,13 +1,16 @@
 package models
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/madswillem/recipeApp/internal/error_handler"
 )
 
@@ -29,6 +32,22 @@ type RecipeSchema struct {
 	NutritionalValue NutritionalValue
 	Rating           RatingStruct `db:"rating"`
 	Steps            []StepsStruct
+}
+
+func (recipe *RecipeSchema) GetAuthor(db *sqlx.DB) (string, *error_handler.APIError) {
+	var owner string
+	err := db.Get(&owner, `SELECT author FROM recipes WHERE id = $1`, recipe.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", error_handler.New("Recipe doesn't exist", http.StatusNotFound, err)
+		}
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" { // 22P02 is the code for invalid_text_representation
+			log.Printf("Potential SQL injection or invalid input detected, with input %s", recipe.ID)
+			return "", error_handler.New("Invalid input", http.StatusBadRequest, err)
+		}
+		return "", error_handler.New("Error while getting author", http.StatusInternalServerError, err)
+	}
+	return owner, nil
 }
 
 func (recipe *RecipeSchema) GetRecipeByID(db *sqlx.DB) *error_handler.APIError {
