@@ -163,7 +163,24 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 		Steps       *[]models.StepsStruct
 	}
 
+	user := models.UserModel{}
+	usrerr := user.GetFromGinContext(c.Get("user"))
+	if usrerr != nil {
+		error_handler.HandleError(c, usrerr.Code, usrerr.Message, usrerr.Errors)
+		return
+	}
+
 	i := c.Param("id")
+	recipe := models.RecipeSchema{ID: i}
+	owner, ownererr := recipe.GetAuthor(s.NewDB)
+	if ownererr != nil {
+		error_handler.HandleError(c, ownererr.Code, ownererr.Message, ownererr.Errors)
+		return
+	}
+	if owner != user.ID {
+		error_handler.HandleError(c, http.StatusUnauthorized, "User is not the owner of the recipe", []error{errors.New("user is not the owner of the recipe")})
+		return
+	}
 
 	c.ShouldBindJSON(&body)
 
@@ -207,7 +224,6 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 	}
 
 	query := "UPDATE recipes SET " + strings.Join(setParts, ", ") + " WHERE id = $" + strconv.Itoa(len(args)+1)
-	fmt.Println(query)
 	args = append(args, i)
 
 	_, err = tx.Exec(query, args...)

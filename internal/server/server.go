@@ -134,7 +134,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/get", s.GetAll)
 	r.GET("/popular", s.GetPopular)
 	r.GET("/getbyid/:id", s.GetById)
-	r.PATCH("/update/:id", s.UpdateRecipe)
+	r.PATCH("/update/:id", s.UserMiddleware, s.UpdateRecipe)
 	r.DELETE("/delete/:id", s.UserMiddleware, s.DeleteRecipe)
 	r.POST("/filter", s.Filter)
 	r.GET("/select/:id", s.UserMiddleware, s.Select)
