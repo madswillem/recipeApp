@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/madswillem/recipeApp/internal/error_handler"
@@ -162,7 +161,7 @@ func (recipe *RecipeSchema) CheckForRequiredFields() *error_handler.APIError {
 	return nil
 }
 
-func (recipe *RecipeSchema) Create(db *sqlx.DB, e *casbin.Enforcer) *error_handler.APIError {
+func (recipe *RecipeSchema) Create(db *sqlx.DB) *error_handler.APIError {
 	apiErr := recipe.CheckForRequiredFields()
 	if apiErr != nil {
 		return apiErr
@@ -186,10 +185,6 @@ func (recipe *RecipeSchema) Create(db *sqlx.DB, e *casbin.Enforcer) *error_handl
 		tx.Rollback()
 		return error_handler.New("Dtabase error: "+err.Error(), http.StatusInternalServerError, err)
 	}
-
-	// Insert Access Control 
-	e.AddGroupingPolicy(recipe.Author, fmt.Sprintf("owner_%s", recipe.ID)) // Assign ownership
-
 
 	// Insert Rating
 	recipe.Rating.DefaultRatingStruct(&recipe.ID, nil)

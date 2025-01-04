@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/gocron"
@@ -29,6 +28,7 @@ type Auth interface {
 	Signup(c *gin.Context, db *sqlx.DB)
 	Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, models.UserModel)
 	Logout(c *gin.Context)
+	AccessControl(sub string, obj string, act string, db *sqlx.DB) (bool, *error_handler.APIError)
 }
 
 type InnitFuncs func(*Server) error
@@ -50,7 +50,6 @@ type Server struct {
 	NewDB    *sqlx.DB
 	Registry *gocron.Registry
 	Auth     Auth
-	Enforcer *casbin.Enforcer
 	config   *Config
 }
 
@@ -71,7 +70,6 @@ func NewServer(config *Config) *http.Server {
 		Registry: gocron.New(),
 		config:   config,
 	}
-	NewServer.Enforcer = auth.AddEnforcer(NewServer.NewDB)
 	w := workers.Worker{DB: NewServer.NewDB}
 	NewServer.Registry.Add(
 		gocron.Job{
