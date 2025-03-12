@@ -1,4 +1,4 @@
-package models
+package recipe
 
 import (
 	"database/sql"
@@ -93,7 +93,7 @@ func (recipe *RecipeSchema) GetRecipeByID(db *sqlx.DB) *error_handler.APIError {
 	return nil
 }
 
-func (recipe *RecipeSchema) UpdateSelected(change int, user *UserModel, db *sqlx.DB) *error_handler.APIError {
+func (recipe *RecipeSchema) UpdateSelected(change int, db *sqlx.DB) *error_handler.APIError {
 	apiErr := recipe.GetRecipeByID(db)
 	if apiErr != nil {
 		return apiErr
@@ -132,11 +132,7 @@ func (recipe *RecipeSchema) UpdateSelected(change int, user *UserModel, db *sqlx
 	if err != nil {
 		return error_handler.New("Error updating rating", http.StatusInternalServerError, err)
 	}
-
-	if user == nil {
-		return nil
-	}
-	apiErr = user.AddToGroup(db, recipe)
+	
 
 	return apiErr
 }
