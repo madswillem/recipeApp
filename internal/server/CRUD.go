@@ -12,14 +12,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 	"github.com/madswillem/recipeApp/internal/error_handler"
-	"github.com/madswillem/recipeApp/internal/models"
+	"github.com/madswillem/recipeApp/internal/recipe"
+	"github.com/madswillem/recipeApp/internal/user"
 )
 
 func (s *Server) GetAll(c *gin.Context) {
-	recipes := []models.RecipeSchema{}
-	ingredients := []models.IngredientsSchema{}
-	steps := []models.StepsStruct{}
-	nutritional_values := []models.NutritionalValue{}
+	recipes := []recipe.RecipeSchema{}
+	ingredients := []recipe.IngredientsSchema{}
+	steps := []recipe.StepsStruct{}
+	nutritional_values := []recipe.NutritionalValue{}
 
 	err := s.NewDB.Select(&recipes, "SELECT * FROM recipes")
 	if err != nil {
@@ -54,7 +55,7 @@ func (s *Server) GetAll(c *gin.Context) {
 		CreatedAt     time.Time         `db:"created_at" json:"created_at"`
 		Name          string            `db:"name" json:"name"`
 		Description   string            `db:"description" json:"description"`
-		ExIngCategory []models.Category `json:"exingcategory"`
+		ExIngCategory []recipe.Category `json:"exingcategory"`
 	}
 	err = s.NewDB.Select(&recipeDiets, `
 		SELECT diet.*, rel.recipe_id
@@ -66,7 +67,7 @@ func (s *Server) GetAll(c *gin.Context) {
 		return
 	}
 
-	recipeMap := make(map[string]*models.RecipeSchema)
+	recipeMap := make(map[string]*recipe.RecipeSchema)
 	for i := range recipes {
 		recipeMap[recipes[i].ID] = &recipes[i]
 	}
@@ -83,7 +84,7 @@ func (s *Server) GetAll(c *gin.Context) {
 	}
 	for _, rd := range recipeDiets {
 		if recipe, exists := recipeMap[rd.RecipeID]; exists {
-			recipe.Diet = append(recipe.Diet, models.DietSchema{
+			recipe.Diet = append(recipe.Diet, *recipe.DietSchema{
 				ID:          rd.ID,
 				CreatedAt:   rd.CreatedAt,
 				Name:        rd.Name,
@@ -95,7 +96,7 @@ func (s *Server) GetAll(c *gin.Context) {
 }
 
 func (s *Server) GetPopular(c *gin.Context) {
-	f := models.Filter{}
+	f := recipe.Filter{}
 	recipes, err := f.Filter(s.NewDB)
 	if err != nil {
 		print(err.Errors)
@@ -106,7 +107,7 @@ func (s *Server) GetPopular(c *gin.Context) {
 }
 
 func (s *Server) AddRecipe(c *gin.Context) {
-	var body models.RecipeSchema
+	var body recipe.RecipeSchema
 
 	binderr := c.ShouldBindJSON(&body)
 	if binderr != nil {
@@ -114,7 +115,7 @@ func (s *Server) AddRecipe(c *gin.Context) {
 		return
 	}
 
-	user := models.UserModel{}
+	user := user.UserModel{}
 	err := user.GetFromGinContext(c.Get("user"))
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
@@ -132,7 +133,7 @@ func (s *Server) AddRecipe(c *gin.Context) {
 }
 
 func (s *Server) AddIngredient(c *gin.Context) {
-	var body models.IngredientDB
+	var body recipe.IngredientDB
 
 	binderr := c.ShouldBindJSON(&body)
 	if binderr != nil {
@@ -158,12 +159,12 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 		YieldUnit   *string `db:"yield_unit" json:"yield_unit"`
 		PrepTime    *string `db:"prep_time" json:"prep_time"`
 		CookingTime *string `db:"cooking_time" json:"cooking_time"`
-		Ingredients *[]models.IngredientsSchema
-		Diet        *models.DietSchema
-		Steps       *[]models.StepsStruct
+		Ingredients *[]recipe.IngredientsSchema
+		Diet        *recipe.DietSchema
+		Steps       *[]recipe.StepsStruct
 	}
 
-	user := models.UserModel{}
+	user := user.UserModel{}
 	usrerr := user.GetFromGinContext(c.Get("user"))
 	if usrerr != nil {
 		error_handler.HandleError(c, usrerr.Code, usrerr.Message, usrerr.Errors)
@@ -235,7 +236,7 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 }
 
 func (s *Server) DeleteRecipe(c *gin.Context) {
-	user := models.UserModel{}
+	user := user.UserModel{}
 	usrerr := user.GetFromGinContext(c.Get("user"))
 	if usrerr != nil {
 		error_handler.HandleError(c, usrerr.Code, usrerr.Message, usrerr.Errors)
@@ -243,7 +244,7 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 	}
 
 	i := c.Param("id")
-	recipe := models.RecipeSchema{ID: i}
+	recipe := recipe.RecipeSchema{ID: i}
 	owner, ownererr := recipe.GetAuthor(s.NewDB)
 	if ownererr != nil {
 		error_handler.HandleError(c, ownererr.Code, ownererr.Message, ownererr.Errors)
@@ -280,7 +281,7 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 func (s *Server) GetById(c *gin.Context) {
 	i := c.Param("id")
 
-	result := models.RecipeSchema{ID: i}
+	result := recipe.RecipeSchema{ID: i}
 	err := result.GetRecipeByID(s.NewDB)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
@@ -300,12 +301,12 @@ func (s *Server) GetById(c *gin.Context) {
 
 func (s *Server) Filter(c *gin.Context) {
 	middleware_user, _ := c.Get("user")
-	user, ok := middleware_user.(models.UserModel)
+	user, ok := middleware_user.(user.UserModel)
 	if !ok {
 		fmt.Println("type assertion failed")
 	}
 
-	var body models.Filter
+	var body recipe.Filter
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
 		error_handler.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{err})
@@ -338,18 +339,24 @@ func (s *Server) Filter(c *gin.Context) {
 
 func (s *Server) Select(c *gin.Context) {
 	middleware_user, _ := c.Get("user")
-	user, ok := middleware_user.(models.UserModel)
+	user, ok := middleware_user.(user.UserModel)
 	if !ok {
 		fmt.Println("type assertion failed")
 	}
 	print(user.ID)
 
-	response := models.RecipeSchema{}
+	response := recipe.RecipeSchema{}
 	response.ID = c.Param("id")
 
-	selectedErr := response.UpdateSelected(1, nil, s.NewDB)
+	selectedErr := response.UpdateSelected(1, s.NewDB)
 	if selectedErr != nil {
 		error_handler.HandleError(c, selectedErr.Code, selectedErr.Message, selectedErr.Errors)
+		return
+	}
+
+	err := user.AddToGroup(s.NewDB, response)
+	if err != nil {
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
 	}
 
@@ -362,12 +369,11 @@ func (s *Server) Deselect(c *gin.Context) {
 		error_handler.HandleError(c, http.StatusBadRequest, "id is not a number", []error{err})
 		return
 	}
-	middleware_user, _ := c.MustGet("user").(models.UserModel)
 
-	response := models.RecipeSchema{}
+	response := recipe.RecipeSchema{}
 	response.ID = fmt.Sprint(i)
 
-	selectedErr := response.UpdateSelected(-1, &middleware_user, s.NewDB)
+	selectedErr := response.UpdateSelected(-1, s.NewDB)
 	if selectedErr != nil {
 		error_handler.HandleError(c, selectedErr.Code, selectedErr.Message, selectedErr.Errors)
 		return

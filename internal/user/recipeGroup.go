@@ -1,4 +1,4 @@
-package models
+package user
 
 import (
 	"database/sql/driver"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/madswillem/gompare"
+	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/tools"
 )
 
@@ -32,7 +33,7 @@ func (rp *RecipeGroupSchema) Value() (driver.Value, error) {
 	return json.Marshal(rp)
 }
 
-func (rp *RecipeGroupSchema) Create(r *RecipeSchema) {
+func (rp *RecipeGroupSchema) Create(r *recipe.RecipeSchema) {
 	// Vectorize the Recipes
 	// Vectorize Ingredients
 	ingredient_list := make([]string, len(r.Ingredients))
@@ -87,7 +88,7 @@ func (rp *RecipeGroupSchema) Create(r *RecipeSchema) {
 	rp.PreperationVec = h.OutputMatrix.Vec[0]
 }
 
-func (rp *RecipeGroupSchema) Compare(r *RecipeSchema) float64 {
+func (rp *RecipeGroupSchema) Compare(r *recipe.RecipeSchema) float64 {
 	h := gompare.New(gompare.Config{
 		Matrix: gompare.Matrix{
 			Dict: rp.IngredientDict,
@@ -153,7 +154,7 @@ func (rp *RecipeGroupSchema) Compare(r *RecipeSchema) float64 {
 	return sim / 8
 }
 
-func (rp *RecipeGroupSchema) Add(r *RecipeSchema) {
+func (rp *RecipeGroupSchema) Add(r *recipe.RecipeSchema) {
 	rp.RecipeIDs = append(rp.RecipeIDs, r.ID)
 	ingredient_list := make([]string, len(r.Ingredients))
 	for n, i := range r.Ingredients {

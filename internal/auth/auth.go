@@ -10,7 +10,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/recipeApp/internal/error_handler"
-	"github.com/madswillem/recipeApp/internal/models"
+	"github.com/madswillem/recipeApp/internal/recipe"
+	"github.com/madswillem/recipeApp/internal/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -55,7 +56,7 @@ func (a *Auth) Signup(c *gin.Context, db *sqlx.DB) {
 	}
 
 	// Create new user
-	user := &models.UserModel{
+	user := &user.UserModel{
 		Email:    input.Email,
 		Password: string(hashedPassword),
 	}
@@ -81,7 +82,7 @@ func (a *Auth) Login(c *gin.Context, db *sqlx.DB) {
 		return
 	}
 
-	var user models.UserModel
+	var user user.UserModel
 	err := db.Get(&user, "SELECT id, password, email FROM public.user WHERE email = $1", input.Email)
 	if err != nil {
 		fmt.Println(err)
@@ -115,7 +116,7 @@ func (a *Auth) Login(c *gin.Context, db *sqlx.DB) {
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
 
-func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, models.UserModel) {
+func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, user.UserModel) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -124,20 +125,20 @@ func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError,
 	})
 
 	if err != nil {
-		return error_handler.New("Invalid token", http.StatusUnauthorized, err), models.UserModel{}
+		return error_handler.New("Invalid token", http.StatusUnauthorized, err), user.UserModel{}
 	}
 
 	// Extract claims
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		// Create user from claims
-		user := models.UserModel{
+		user := user.UserModel{
 			ID:    claims["user_id"].(string),
 			Email: claims["email"].(string),
 		}
 		return nil, user
 	}
 
-	return error_handler.New("Invalid token", http.StatusUnauthorized, errors.New("invalid token")), models.UserModel{}
+	return error_handler.New("Invalid token", http.StatusUnauthorized, errors.New("invalid token")), user.UserModel{}
 }
 
 func (a *Auth) Logout(c *gin.Context) {
@@ -146,7 +147,7 @@ func (a *Auth) Logout(c *gin.Context) {
 }
 
 func (a *Auth) AccessControl(sub string, obj string, act string, db *sqlx.DB) (bool, *error_handler.APIError) {
-	recipe := models.RecipeSchema{ID: obj}
+	recipe := recipe.RecipeSchema{ID: obj}
 	owner, ownererr := recipe.GetAuthor(db)
 	if ownererr != nil {
 		return false, ownererr

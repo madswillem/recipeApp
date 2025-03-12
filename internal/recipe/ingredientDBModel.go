@@ -1,4 +1,4 @@
-package models
+package recipe
 
 import (
 	"net/http"
