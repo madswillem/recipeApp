@@ -39,15 +39,14 @@ func (s *Server) CreateGroup(c *gin.Context) {
 		fmt.Println("type assertion failed")
 	}
 
-	r := recipe.RecipeSchema{ID: "aa85daf1-dbc5-462d-a6fe-3fbb358b08dd"}
-	apiErr := r.GetRecipeByID(s.NewDB)
+	r, apiErr := recipe.GetRecipeByID(s.NewDB, "aa85daf1-dbc5-462d-a6fe-3fbb358b08dd")
 	if apiErr != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, apiErr)
 		return
 	}
 
 	rp := user.RecipeGroupSchema{}
-	rp.Create(&r)
+	rp.Create(r)
 	u.RecipeGroups = append(u.RecipeGroups, rp)
 
 	v, err := json.Marshal(u.RecipeGroups)
