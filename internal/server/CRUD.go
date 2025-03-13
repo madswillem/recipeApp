@@ -123,7 +123,7 @@ func (s *Server) AddRecipe(c *gin.Context) {
 	}
 
 	body.Author = user.ID
-	err = body.Create(s.NewDB)
+	err = recipe.Create(s.NewDB, &body)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
@@ -244,8 +244,7 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 	}
 
 	i := c.Param("id")
-	recipe := recipe.RecipeSchema{ID: i}
-	owner, ownererr := recipe.GetAuthor(s.NewDB)
+	owner, ownererr := recipe.GetRecipeAuthorbyID(s.NewDB, i)
 	if ownererr != nil {
 		error_handler.HandleError(c, ownererr.Code, ownererr.Message, ownererr.Errors)
 		return
@@ -281,8 +280,7 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 func (s *Server) GetById(c *gin.Context) {
 	i := c.Param("id")
 
-	result := recipe.RecipeSchema{ID: i}
-	err := result.GetRecipeByID(s.NewDB)
+	result, err := recipe.GetRecipeByID(s.NewDB, i)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 	}
@@ -345,8 +343,11 @@ func (s *Server) Select(c *gin.Context) {
 	}
 	print(user.ID)
 
-	response := recipe.RecipeSchema{}
-	response.ID = c.Param("id")
+	response, err := recipe.GetRecipeByID(s.NewDB, c.Param("id"))
+	if err != nil {
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		return
+	}
 
 	selectedErr := response.UpdateSelected(1, s.NewDB)
 	if selectedErr != nil {
@@ -354,7 +355,7 @@ func (s *Server) Select(c *gin.Context) {
 		return
 	}
 
-	err := user.AddToGroup(s.NewDB, &response)
+	err = user.AddToGroup(s.NewDB, response)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
@@ -364,14 +365,11 @@ func (s *Server) Select(c *gin.Context) {
 }
 
 func (s *Server) Deselect(c *gin.Context) {
-	i, err := strconv.Atoi(c.Param("id"))
+	response, err := recipe.GetRecipeByID(s.NewDB, c.Param("id"))
 	if err != nil {
-		error_handler.HandleError(c, http.StatusBadRequest, "id is not a number", []error{err})
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
 	}
-
-	response := recipe.RecipeSchema{}
-	response.ID = fmt.Sprint(i)
 
 	selectedErr := response.UpdateSelected(-1, s.NewDB)
 	if selectedErr != nil {

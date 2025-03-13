@@ -147,8 +147,7 @@ func (a *Auth) Logout(c *gin.Context) {
 }
 
 func (a *Auth) AccessControl(sub string, obj string, act string, db *sqlx.DB) (bool, *error_handler.APIError) {
-	recipe := recipe.RecipeSchema{ID: obj}
-	owner, ownererr := recipe.GetAuthor(db)
+	owner, ownererr := recipe.GetRecipeAuthorbyID(db, obj)
 	if ownererr != nil {
 		return false, ownererr
 	}

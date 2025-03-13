@@ -88,11 +88,6 @@ func (user *UserModel) GetFromGinContext(data any, exists bool) *error_handler.A
 }
 
 func (user *UserModel) AddGroup(db *sqlx.DB, r *recipe.RecipeSchema) *error_handler.APIError {
-	apiErr := r.GetRecipeByID(db)
-	if apiErr != nil {
-		return apiErr
-	}
-
 	rp := RecipeGroupSchema{}
 	rp.Create(r)
 	user.RecipeGroups = append(user.RecipeGroups, rp)
