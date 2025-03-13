@@ -83,8 +83,8 @@ func (s *Server) GetAll(c *gin.Context) {
 		}
 	}
 	for _, rd := range recipeDiets {
-		if recipe, exists := recipeMap[rd.RecipeID]; exists {
-			recipe.Diet = append(recipe.Diet, *recipe.DietSchema{
+		if r, exists := recipeMap[rd.RecipeID]; exists {
+			r.Diet = append(r.Diet, recipe.DietSchema{
 				ID:          rd.ID,
 				CreatedAt:   rd.CreatedAt,
 				Name:        rd.Name,
@@ -354,7 +354,7 @@ func (s *Server) Select(c *gin.Context) {
 		return
 	}
 
-	err := user.AddToGroup(s.NewDB, response)
+	err := user.AddToGroup(s.NewDB, &response)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return

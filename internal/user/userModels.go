@@ -9,6 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/tools"
 )
 
@@ -25,8 +26,8 @@ type UserModel struct {
 	Settings     UserSettings `database:"settings"`
 }
 type UserSettings struct {
-	Allergies []*IngredientDB `database:"allergies"`
-	Diet      DietSchema      `gorm:"polymorphic:Owner"`
+	Allergies []*string `database:"allergies"`
+	Diet      recipe.DietSchema      `gorm:"polymorphic:Owner"`
 }
 
 func (user *UserModel) GetByCookie(db *sqlx.DB) *error_handler.APIError {
@@ -86,7 +87,7 @@ func (user *UserModel) GetFromGinContext(data any, exists bool) *error_handler.A
 	return nil
 }
 
-func (user *UserModel) AddGroup(db *sqlx.DB, r *RecipeSchema) *error_handler.APIError {
+func (user *UserModel) AddGroup(db *sqlx.DB, r *recipe.RecipeSchema) *error_handler.APIError {
 	apiErr := r.GetRecipeByID(db)
 	if apiErr != nil {
 		return apiErr
@@ -104,7 +105,7 @@ func (user *UserModel) AddGroup(db *sqlx.DB, r *RecipeSchema) *error_handler.API
 	db.MustExec(`UPDATE "user" SET groups = $1 WHERE id = $2`, v, user.ID)
 	return nil
 }
-func (user *UserModel) AddToGroup(db *sqlx.DB, r *RecipeSchema) *error_handler.APIError {
+func (user *UserModel) AddToGroup(db *sqlx.DB, r *recipe.RecipeSchema) *error_handler.APIError {
 	var groups []byte
 	err := db.Get(&groups, `SELECT "groups" FROM "user" WHERE id=$1`, user.ID)
 	if err != nil {
@@ -160,6 +161,6 @@ func (user *UserModel) AddToGroup(db *sqlx.DB, r *RecipeSchema) *error_handler.A
 }
 
 // Using db to extend an existing db like a search to show recipes similar to your intrests
-func (user *UserModel) GetRecomendation(db *sqlx.DB) (*error_handler.APIError, []RecipeSchema) {
+func (user *UserModel) GetRecomendation(db *sqlx.DB) (*error_handler.APIError, []recipe.RecipeSchema) {
 	return nil, nil
 }
