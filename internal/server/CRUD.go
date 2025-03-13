@@ -262,7 +262,7 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 			error_handler.HandleError(
 				c,
 				http.StatusBadRequest, fmt.Sprintf(`Value "%s" is not an ID`, i),
-				[]error{fmt.Errorf(`value "%s" is not an ID`, i)},
+				[]error{err},
 			)
 			return
 		}

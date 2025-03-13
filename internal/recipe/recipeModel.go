@@ -43,7 +43,7 @@ func (recipe *RecipeSchema) GetAuthor(db *sqlx.DB) (string, *error_handler.APIEr
 		}
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" { // 22P02 is the code for invalid_text_representation
 			log.Printf("Potential SQL injection or invalid input detected, with input %s", recipe.ID)
-			return "", error_handler.New("Invalid input", http.StatusBadRequest, err)
+			return "", error_handler.New(fmt.Sprintf(`Value "%s" is not an ID`, recipe.ID), http.StatusBadRequest, err)
 		}
 		return "", error_handler.New("Error while getting author", http.StatusInternalServerError, err)
 	}
