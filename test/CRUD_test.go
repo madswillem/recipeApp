@@ -16,13 +16,14 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/recipeApp/internal/database"
-	"github.com/madswillem/recipeApp/internal/models"
+	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/server"
 	"github.com/madswillem/recipeApp/internal/tools"
+	"github.com/madswillem/recipeApp/internal/user"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-func assertRecipesEqual(t *testing.T, expected models.RecipeSchema, actual models.RecipeSchema) {
+func assertRecipesEqual(t *testing.T, expected recipe.RecipeSchema, actual recipe.RecipeSchema) {
 	if actual.ID == "" || expected.ID == "" {
 		t.Errorf("%s (actual.ID) != %s (expected.ID)", actual.ID, expected.ID)
 
@@ -44,7 +45,7 @@ func assertRecipesEqual(t *testing.T, expected models.RecipeSchema, actual model
 	var errors []string
 
 	// Compare each ingredient in the actual recipe
-	less := func(a, b models.IngredientsSchema) bool {
+	less := func(a, b recipe.IngredientsSchema) bool {
 		return a.ID < b.ID // Sorting by Name (you can add more criteria if needed)
 	}
 
@@ -129,6 +130,7 @@ func TestServer_AddRecipe(t *testing.T) {
 	type testCase struct {
 		name           string
 		requestBody    string
+		user 		 user.UserModel
 		expectedStatus int
 		expectedBody   string
 	}
@@ -137,6 +139,7 @@ func TestServer_AddRecipe(t *testing.T) {
 		{
 			name:           "add recipe with all required fields",
 			requestBody:    "./testdata/create/add_recipe_with_all_required_fields/body.json",
+			user:           user.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusCreated,
 			expectedBody:   "./testdata/create/add_recipe_with_all_required_fields/expected_return.json",
 		},
@@ -160,6 +163,7 @@ func TestServer_AddRecipe(t *testing.T) {
 			}
 			c.Request = httptest.NewRequest(http.MethodPost, "/create", strings.NewReader(reqBody))
 			c.Request.Header.Set("Content-Type", "application/json")
+			c.Set("user", tc.user)
 
 			s.AddRecipe(c)
 
@@ -168,7 +172,7 @@ func TestServer_AddRecipe(t *testing.T) {
 			}
 
 			if tc.expectedBody != "" {
-				var response models.RecipeSchema
+				var response recipe.RecipeSchema
 				err = json.NewDecoder(w.Body).Decode(&response)
 				if err != nil {
 					t.Fatal(err)
@@ -179,7 +183,7 @@ func TestServer_AddRecipe(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				var expectedReturn models.RecipeSchema
+				var expectedReturn recipe.RecipeSchema
 				expectedBody, err := tools.ReadFileAsString(completeExpectedFilePath)
 				if err != nil {
 					t.Fatal(err)
@@ -263,7 +267,7 @@ func TestServer_GetById(t *testing.T) {
 			}
 
 			if tt.expectedBody != "" {
-				var response models.RecipeSchema
+				var response recipe.RecipeSchema
 				err = json.NewDecoder(w.Body).Decode(&response)
 				if err != nil {
 					t.Fatal(err)
@@ -274,7 +278,7 @@ func TestServer_GetById(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				var expectedReturn models.RecipeSchema
+				var expectedReturn recipe.RecipeSchema
 				expectedBody, err := tools.ReadFileAsString(completeExpectedFilePath)
 				if err != nil {
 					t.Fatal(err)
@@ -307,49 +311,49 @@ func TestServer_Delete(t *testing.T) {
 	tests := []struct {
 		name           string
 		id             string
-		user           models.UserModel
+		user           user.UserModel
 		expectedStatus int
 		expectedBody   string
 	}{
 		{
 			name:           "delete recipe with id c4ef5707-1577-4f8c-99ef-0f492e82b895",
 			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
-			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
+			user:           user.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusOK,
 			expectedBody:   "",
 		},
 		{
 			name:           "delete nonexisting recipe",
 			id:             "c5ef5707-1577-4f8c-99ef-0f492e82b895",
-			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
+			user:           user.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusNotFound,
-			expectedBody:   `{"errMessage":"Recipe doesn't exist","errors":"recipe doesn't exist"}`,
+			expectedBody:   `{"errMessage":"Recipe doesn't exist","errors":"sql: no rows in result set"}`,
 		},
 		{
 			name:           "test sql injection",
 			id:             `c5ef5707-1577-4f8c-99ef-0f492e82b895"; SELECT * FROM recipes;`,
-			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
+			user:           user.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"errMessage":"Value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID","errors":"value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID"}`,
+			expectedBody:   `{"errMessage":"Value \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\" is not an ID","errors":"pq: invalid input syntax for type uuid: \"c5ef5707-1577-4f8c-99ef-0f492e82b895\"; SELECT * FROM recipes;\""}`,
 		},
 		{
 			name:           "delete recipe with invalid UUID format",
 			id:             "invalid-uuid-format",
-			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
+			user:           user.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"errMessage":"Value \"invalid-uuid-format\" is not an ID","errors":"value \"invalid-uuid-format\" is not an ID"}`,
+			expectedBody:   `{"errMessage":"Value \"invalid-uuid-format\" is not an ID","errors":"pq: invalid input syntax for type uuid: \"invalid-uuid-format\""}`,
 		},
 		{
 			name:           "delete recipe with empty ID",
 			id:             "",
-			user:           models.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
+			user:           user.UserModel{ID: "f85a98f8-2572-420a-9ae5-2c997ad96b6d"},
 			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"errMessage":"Value \"\" is not an ID","errors":"value \"\" is not an ID"}`,
+			expectedBody:   `{"errMessage":"Value \"\" is not an ID","errors":"pq: invalid input syntax for type uuid: \"\""}`,
 		},
 		{
 			name:           "delete recipe with unauthorized user",
 			id:             "c4ef5707-1577-4f8c-99ef-0f492e82b895",
-			user:           models.UserModel{ID: "wrong-user-id"},
+			user:           user.UserModel{ID: "wrong-user-id"},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   `{"errMessage":"User is not the owner of the recipe","errors":"user is not the owner of the recipe"}`,
 		},
