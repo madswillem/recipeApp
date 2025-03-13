@@ -7,12 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/madswillem/recipeApp/internal/error_handler"
-	"github.com/madswillem/recipeApp/internal/models"
+	"github.com/madswillem/recipeApp/internal/recipe"
+	"github.com/madswillem/recipeApp/internal/user"
 )
 
 func (s *Server) GetRecommendation(c *gin.Context) {
 	middleware_user, _ := c.Get("user")
-	user, ok := middleware_user.(models.UserModel)
+	user, ok := middleware_user.(user.UserModel)
 	if !ok {
 		fmt.Println("type assertion failed")
 	}
@@ -33,27 +34,27 @@ func (s *Server) GetRecommendation(c *gin.Context) {
 }
 func (s *Server) CreateGroup(c *gin.Context) {
 	middleware_user, _ := c.Get("user")
-	user, ok := middleware_user.(models.UserModel)
+	u, ok := middleware_user.(user.UserModel)
 	if !ok {
 		fmt.Println("type assertion failed")
 	}
 
-	r := models.RecipeSchema{ID: "aa85daf1-dbc5-462d-a6fe-3fbb358b08dd"}
+	r := recipe.RecipeSchema{ID: "aa85daf1-dbc5-462d-a6fe-3fbb358b08dd"}
 	apiErr := r.GetRecipeByID(s.NewDB)
 	if apiErr != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, apiErr)
 		return
 	}
 
-	rp := models.RecipeGroupSchema{}
+	rp := user.RecipeGroupSchema{}
 	rp.Create(&r)
-	user.RecipeGroups = append(user.RecipeGroups, rp)
+	u.RecipeGroups = append(u.RecipeGroups, rp)
 
-	v, err := json.Marshal(user.RecipeGroups)
+	v, err := json.Marshal(u.RecipeGroups)
 	if err != nil {
 		error_handler.HandleError(c, http.StatusInternalServerError, "Couldnt Marshal recipe group", []error{err})
 	}
 
-	s.NewDB.MustExec(`UPDATE "user" SET groups = $1 WHERE id = $2`, v, user.ID)
-	c.JSON(http.StatusAccepted, user)
+	s.NewDB.MustExec(`UPDATE "user" SET groups = $1 WHERE id = $2`, v, u.ID)
+	c.JSON(http.StatusAccepted, u)
 }
