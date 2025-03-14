@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/madswillem/recipeApp/internal/error_handler"
-	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/user"
 )
 
@@ -39,7 +38,7 @@ func (s *Server) CreateGroup(c *gin.Context) {
 		fmt.Println("type assertion failed")
 	}
 
-	r, apiErr := recipe.GetRecipeByID(s.NewDB, "aa85daf1-dbc5-462d-a6fe-3fbb358b08dd")
+	r, apiErr := s.RecipeRepo.GetRecipeByID("aa85daf1-dbc5-462d-a6fe-3fbb358b08dd")
 	if apiErr != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, apiErr)
 		return

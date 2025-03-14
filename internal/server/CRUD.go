@@ -123,7 +123,7 @@ func (s *Server) AddRecipe(c *gin.Context) {
 	}
 
 	body.Author = user.ID
-	err = recipe.Create(s.NewDB, &body)
+	err = s.RecipeRepo.Create(&body)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
@@ -171,7 +171,7 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 		return
 	}
 
-	ok, accesserr := s.Auth.AccessControl(user.ID, c.Param("id"), "update", s.NewDB)
+	ok, accesserr := s.Auth.AccessControl(user.ID, c.Param("id"), "update", s.RecipeRepo)
 	if accesserr != nil {
 		error_handler.HandleError(c, accesserr.Code, accesserr.Message, accesserr.Errors)
 		return
@@ -244,7 +244,7 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 	}
 
 	i := c.Param("id")
-	owner, ownererr := recipe.GetRecipeAuthorbyID(s.NewDB, i)
+	owner, ownererr := s.RecipeRepo.GetRecipeAuthorbyID(i)
 	if ownererr != nil {
 		error_handler.HandleError(c, ownererr.Code, ownererr.Message, ownererr.Errors)
 		return
@@ -280,7 +280,7 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 func (s *Server) GetById(c *gin.Context) {
 	i := c.Param("id")
 
-	result, err := recipe.GetRecipeByID(s.NewDB, i)
+	result, err := s.RecipeRepo.GetRecipeByID(i)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 	}
@@ -343,7 +343,7 @@ func (s *Server) Select(c *gin.Context) {
 	}
 	print(user.ID)
 
-	response, err := recipe.GetRecipeByID(s.NewDB, c.Param("id"))
+	response, err := s.RecipeRepo.GetRecipeByID(c.Param("id"))
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
@@ -365,7 +365,7 @@ func (s *Server) Select(c *gin.Context) {
 }
 
 func (s *Server) Deselect(c *gin.Context) {
-	response, err := recipe.GetRecipeByID(s.NewDB, c.Param("id"))
+	response, err := s.RecipeRepo.GetRecipeByID(c.Param("id"))
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
