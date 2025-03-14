@@ -12,9 +12,26 @@ import (
 	"github.com/pkg/errors"
 )
 
-func GetRecipeByID(db *sqlx.DB, id string) (*RecipeSchema, *error_handler.APIError) {
+type RecipeRepository interface {
+	//GetAllRecipes() ([]recipe.RecipeSchema, *error_handler.APIError)
+	GetRecipeByID(id string) (*RecipeSchema, *error_handler.APIError)
+	GetRecipeAuthorbyID(id string) (string, *error_handler.APIError)
+	Create(recipe *RecipeSchema) *error_handler.APIError
+}
+
+type RecipeRepo struct {
+	DB *sqlx.DB
+}
+
+func NewRecipeRepo(db *sqlx.DB) *RecipeRepo {
+	return &RecipeRepo{
+		DB: db,
+	}
+}
+
+func (rp *RecipeRepo) GetRecipeByID(id string) (*RecipeSchema, *error_handler.APIError) {
 	recipe := &RecipeSchema{}
-	err := db.Get(recipe, `SELECT recipes.*,
+	err := rp.DB.Get(recipe, `SELECT recipes.*,
 								rt.id AS "rating.id", rt.created_at AS "rating.created_at",
 								rt.recipe_id AS "rating.recipe_id", rt.overall AS "rating.overall", rt.mon AS "rating.mon",
 								rt.tue AS "rating.tue", rt.wed AS "rating.wed", rt.thu AS "rating.thu", rt.fri AS "rating.fri",
@@ -30,12 +47,12 @@ func GetRecipeByID(db *sqlx.DB, id string) (*RecipeSchema, *error_handler.APIErr
 		return nil, error_handler.New("An error ocurred fetching the recipe: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
-	err = db.Select(&recipe.Steps, `SELECT * FROM step WHERE recipe_id = $1`, id)
+	err = rp.DB.Select(&recipe.Steps, `SELECT * FROM step WHERE recipe_id = $1`, id)
 	if err != nil {
 		return nil, error_handler.New("An error ocurred fetching the steps: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
-	err = db.Select(&recipe.Ingredients, `SELECT recipe_ingredient.*, ingredient.name AS name
+	err = rp.DB.Select(&recipe.Ingredients, `SELECT recipe_ingredient.*, ingredient.name AS name
 										FROM recipe_ingredient
 										INNER JOIN ingredient ON ingredient.id = recipe_ingredient.ingredient_id
 										WHERE recipe_id = $1`, recipe.ID)
@@ -43,7 +60,7 @@ func GetRecipeByID(db *sqlx.DB, id string) (*RecipeSchema, *error_handler.APIErr
 		return nil, error_handler.New("An error ocurred fetching the ingredients: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
-	err = db.Select(&recipe.Diet, `
+	err = rp.DB.Select(&recipe.Diet, `
 		SELECT diet.*
 		FROM rel_diet_recipe rel
 		JOIN diet  ON rel.diet_id = diet.id
@@ -56,9 +73,9 @@ func GetRecipeByID(db *sqlx.DB, id string) (*RecipeSchema, *error_handler.APIErr
 	return recipe, nil
 }
 
-func GetRecipeAuthorbyID(db *sqlx.DB, id string) (string, *error_handler.APIError) {
+func (rp *RecipeRepo) GetRecipeAuthorbyID(id string) (string, *error_handler.APIError) {
 	var owner string
-	err := db.Get(&owner, `SELECT author FROM recipes WHERE id = $1`, id)
+	err := rp.DB.Get(&owner, `SELECT author FROM recipes WHERE id = $1`, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", error_handler.New("Recipe doesn't exist", http.StatusNotFound, err)
@@ -72,17 +89,8 @@ func GetRecipeAuthorbyID(db *sqlx.DB, id string) (string, *error_handler.APIErro
 	return owner, nil
 }
 
-func Create(db *sqlx.DB, recipe *RecipeSchema) *error_handler.APIError {
-	apiErr := recipe.CheckForRequiredFields()
-	if apiErr != nil {
-		return apiErr
-	}
-
-	for i := 0; i < len(recipe.Ingredients); i++ {
-		recipe.Ingredients[i].Rating.DefaultRatingStruct(nil, &recipe.Ingredients[i].ID)
-	}
-
-	tx := db.MustBegin()
+func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
+	tx := rp.DB.MustBegin()
 	// Insert recipe
 	query := `INSERT INTO recipes (author, name, cuisine, yield, yield_unit, prep_time, cooking_time, version)
               VALUES (:author, :name, :cuisine, :yield, :yield_unit, :prep_time, :cooking_time, :version) RETURNING id`
@@ -98,7 +106,6 @@ func Create(db *sqlx.DB, recipe *RecipeSchema) *error_handler.APIError {
 	}
 
 	// Insert Rating
-	recipe.Rating.DefaultRatingStruct(&recipe.ID, nil)
 	query = `INSERT INTO rating (
 				recipe_id, overall, mon, tue, wed, thu, fri, sat, sun, win, spr, sum, aut,
 				thirtydegree, twentiedegree, tendegree, zerodegree, subzerodegree)

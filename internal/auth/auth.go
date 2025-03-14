@@ -146,8 +146,8 @@ func (a *Auth) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
-func (a *Auth) AccessControl(sub string, obj string, act string, db *sqlx.DB) (bool, *error_handler.APIError) {
-	owner, ownererr := recipe.GetRecipeAuthorbyID(db, obj)
+func (a *Auth) AccessControl(sub string, obj string, act string, repo recipe.RecipeRepository) (bool, *error_handler.APIError) {
+	owner, ownererr := repo.GetRecipeAuthorbyID(obj)
 	if ownererr != nil {
 		return false, ownererr
 	}

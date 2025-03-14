@@ -69,7 +69,7 @@ func (recipe *RecipeSchema) UpdateSelected(change int, db *sqlx.DB) *error_handl
 	return apiErr
 }
 
-func (recipe *RecipeSchema) CheckForRequiredFields() *error_handler.APIError {
+func (recipe *RecipeSchema) checkForRequiredFields() *error_handler.APIError {
 	if recipe.Name == "" {
 		return error_handler.New("missing recipe name", http.StatusBadRequest, errors.New("missing recipe name"))
 	}
@@ -79,11 +79,27 @@ func (recipe *RecipeSchema) CheckForRequiredFields() *error_handler.APIError {
 	if recipe.Steps == nil {
 		return error_handler.New("missing recipe steps", http.StatusBadRequest, errors.New("missing recipe steps"))
 	}
+
+	return nil
+}
+
+func (recipe *RecipeSchema) Build(authorid string) *error_handler.APIError {
+	// Ensure Recipe has all required fields
+	apiErr := recipe.checkForRequiredFields()
+	if apiErr != nil {
+		return apiErr
+	}
+	recipe.Rating.DefaultRatingStruct(&recipe.ID, nil)
+
+	// Ensure all ingredients have all required fields
 	for _, ingredient := range recipe.Ingredients {
 		err := ingredient.CheckForRequiredFields()
 		if err != nil {
 			return error_handler.New(fmt.Sprintf("missing required field in ingredient %s %s", ingredient.Name, err.Error()), http.StatusBadRequest, err)
 		}
+	}
+	for i := 0; i < len(recipe.Ingredients); i++ {
+		recipe.Ingredients[i].Rating.DefaultRatingStruct(nil, &recipe.Ingredients[i].ID)
 	}
 
 	return nil

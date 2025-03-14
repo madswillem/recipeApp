@@ -16,6 +16,7 @@ import (
 	"github.com/madswillem/recipeApp/internal/database"
 	"github.com/madswillem/recipeApp/internal/error_handler"
 	"github.com/madswillem/recipeApp/internal/initializers"
+	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/user"
 	"github.com/madswillem/recipeApp/internal/workers"
 )
@@ -28,7 +29,7 @@ type Auth interface {
 	Signup(c *gin.Context, db *sqlx.DB)
 	Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, user.UserModel)
 	Logout(c *gin.Context)
-	AccessControl(sub string, obj string, act string, db *sqlx.DB) (bool, *error_handler.APIError)
+	AccessControl(sub string, obj string, act string, repo recipe.RecipeRepository) (bool, *error_handler.APIError)
 }
 
 type InnitFuncs func(*Server) error
@@ -49,6 +50,7 @@ type Server struct {
 	port     int
 	NewDB    *sqlx.DB
 	Registry *gocron.Registry
+	RecipeRepo   recipe.RecipeRepository
 	Auth     Auth
 	config   *Config
 }
@@ -70,6 +72,7 @@ func NewServer(config *Config) *http.Server {
 		Registry: gocron.New(),
 		config:   config,
 	}
+	NewServer.RecipeRepo = recipe.NewRecipeRepo(NewServer.NewDB)
 	w := workers.Worker{DB: NewServer.NewDB}
 	NewServer.Registry.Add(
 		gocron.Job{
