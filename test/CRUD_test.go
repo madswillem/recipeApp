@@ -126,6 +126,7 @@ func TestServer_AddRecipe(t *testing.T) {
 	}
 
 	s := server.Server{NewDB: database.ConnectToDB(&sqlx.Conn{}, dbURL)}
+	s.RecipeRepo = recipe.NewRecipeRepo(s.NewDB)
 
 	type testCase struct {
 		name           string
@@ -237,6 +238,7 @@ func TestServer_GetById(t *testing.T) {
 	}
 
 	s := server.Server{NewDB: database.ConnectToDB(&sqlx.Conn{}, dbURL)}
+	s.RecipeRepo = recipe.NewRecipeRepo(s.NewDB)
 
 	tests := []struct {
 		name           string
@@ -307,6 +309,7 @@ func TestServer_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := server.Server{NewDB: database.ConnectToDB(&sqlx.Conn{}, URL)}
+	s.RecipeRepo = recipe.NewRecipeRepo(s.NewDB)
 
 	tests := []struct {
 		name           string

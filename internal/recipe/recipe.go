@@ -9,7 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/madswillem/recipeApp/internal/error_handler"
-	"github.com/pkg/errors"
 )
 
 type RecipeRepository interface {
@@ -21,11 +20,17 @@ type RecipeRepository interface {
 
 type RecipeRepo struct {
 	DB *sqlx.DB
+	IngRep *IngredientRepository
+	StepRepo *StepRepository
+	DietRepo *DietRepository
 }
 
 func NewRecipeRepo(db *sqlx.DB) *RecipeRepo {
 	return &RecipeRepo{
 		DB: db,
+		IngRep: NewIngredientRepo(),
+		StepRepo: NewStepRepo(),
+		DietRepo: NewDietRepo(),
 	}
 }
 
@@ -106,6 +111,8 @@ func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
 	}
 
 	// Insert Rating
+	recipe.Rating.RecipeID = &recipe.ID
+	fmt.Println(recipe.Rating)
 	query = `INSERT INTO rating (
 				recipe_id, overall, mon, tue, wed, thu, fri, sat, sun, win, spr, sum, aut,
 				thirtydegree, twentiedegree, tendegree, zerodegree, subzerodegree)
@@ -122,7 +129,7 @@ func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
 	// Insert Ingredient
 	for _, ing := range recipe.Ingredients {
 		ing.RecipeID = recipe.ID
-		err := ing.Create(tx)
+		err := rp.IngRep.Create(&ing, tx)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -132,7 +139,7 @@ func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
 	//Insert Steps
 	for _, s := range recipe.Steps {
 		s.RecipeID = recipe.ID
-		err := s.Create(tx)
+		err := rp.StepRepo.Create(&s, tx)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -141,20 +148,10 @@ func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
 
 	//Insert Diets
 	for _, d := range recipe.Diet {
-		var exists bool
-		err = tx.Get(&exists, "SELECT EXISTS (SELECT 1 FROM diet WHERE id = $1);", d.ID)
+		err := rp.DietRepo.Create(&d, recipe.ID, tx)
 		if err != nil {
 			tx.Rollback()
-			return error_handler.New("error while checking if diet exists", http.StatusInternalServerError, err)
-		}
-		if !exists {
-			tx.Rollback()
-			return error_handler.New("couldn't find diet "+d.ID, http.StatusNotFound, errors.New("couldn't find diet "+d.ID))
-		}
-		_, err = tx.Exec("INSERT INTO rel_diet_recipe (recipe_id, diet_id) VALUES ($1, $2)", recipe.ID, d.ID)
-		if err != nil {
-			tx.Rollback()
-			return error_handler.New("error while inserting the relationship between diet and recipe", http.StatusInternalServerError, err)
+			return err
 		}
 	}
 
