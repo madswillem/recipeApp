@@ -122,7 +122,8 @@ func (s *Server) AddRecipe(c *gin.Context) {
 		return
 	}
 
-	body.Author = user.ID
+	body.Build(user.ID)
+
 	err = s.RecipeRepo.Create(&body)
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)

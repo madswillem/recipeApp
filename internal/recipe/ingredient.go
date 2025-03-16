@@ -7,23 +7,16 @@ import (
 	"github.com/madswillem/recipeApp/internal/error_handler"
 )
 
-type IngredientRepository interface {
-	Create(ingredient *IngredientsSchema) *error_handler.APIError
+type IngredientRepository struct {
 }
 
-type IngredientRepo struct {
-	DB *sqlx.Tx
+func NewIngredientRepo() *IngredientRepository {
+	return &IngredientRepository{}
 }
 
-func NewIngredientRepo(db *sqlx.Tx) *IngredientRepo {
-	return &IngredientRepo{
-		DB: db,
-	}
-}
-
-func (ir *IngredientRepo) Create(ingredient *IngredientsSchema) *error_handler.APIError {
+func (ir *IngredientRepository) Create(ingredient *IngredientsSchema, db *sqlx.Tx) *error_handler.APIError {
 	var err *error_handler.APIError
-	ingredient.IngredientID, err = GetIngIDByName(ir.DB, ingredient.Name)
+	ingredient.IngredientID, err = GetIngIDByName(db, ingredient.Name)
 	if err != nil {
 		return err
 	}
@@ -33,9 +26,9 @@ func (ir *IngredientRepo) Create(ingredient *IngredientsSchema) *error_handler.A
     VALUES
     (:recipe_id, :ingredient_id, :amount, :unit)`
 
-	_, db_err := ir.DB.NamedExec(query, &ingredient)
+	_, db_err := db.NamedExec(query, &ingredient)
 	if db_err != nil {
-		ir.DB.Rollback()
+		db.Rollback()
 		return error_handler.New("Error creating "+ingredient.Name+": "+db_err.Error(), http.StatusInternalServerError, db_err)
 	}
 
