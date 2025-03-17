@@ -3,7 +3,7 @@ package recipe
 import (
 	"net/http"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/madswillem/recipeApp/internal/database"
 	"github.com/madswillem/recipeApp/internal/error_handler"
 )
 
@@ -14,9 +14,9 @@ func NewIngredientRepo() *IngredientRepository {
 	return &IngredientRepository{}
 }
 
-func (ir *IngredientRepository) Create(ingredient *IngredientsSchema, db *sqlx.Tx) *error_handler.APIError {
+func (ir *IngredientRepository) Create(ingredient *IngredientsSchema, db database.SQLDB) *error_handler.APIError {
 	var err *error_handler.APIError
-	ingredient.IngredientID, err = GetIngIDByName(db, ingredient.Name)
+	ingredient.IngredientID, err = GetIngIDByName(ingredient.Name, db)
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,6 @@ func (ir *IngredientRepository) Create(ingredient *IngredientsSchema, db *sqlx.T
 
 	_, db_err := db.NamedExec(query, &ingredient)
 	if db_err != nil {
-		db.Rollback()
 		return error_handler.New("Error creating "+ingredient.Name+": "+db_err.Error(), http.StatusInternalServerError, db_err)
 	}
 

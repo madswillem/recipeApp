@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/madswillem/recipeApp/internal/database"
 	"github.com/madswillem/recipeApp/internal/error_handler"
 )
 
@@ -59,11 +60,10 @@ func (ingredient *IngredientDB) Create(db *sqlx.DB) *error_handler.APIError {
 	return nil
 }
 
-func GetIngIDByName(tx *sqlx.Tx, name string) (string, *error_handler.APIError) {
+func GetIngIDByName(name string, db database.SQLDB) (string, *error_handler.APIError) {
 	var id string
-	err := tx.QueryRow("SELECT id FROM ingredient WHERE LOWER(name) = LOWER($1)", name).Scan(&id)
+	err := db.QueryRow("SELECT id FROM ingredient WHERE LOWER(name) = LOWER($1)", name).Scan(&id)
 	if err != nil {
-		tx.Rollback()
 		return "", error_handler.New("database error getting "+name+" : "+err.Error(), http.StatusInternalServerError, err)
 	}
 
