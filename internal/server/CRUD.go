@@ -3,101 +3,25 @@ package server
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lib/pq"
 	"github.com/madswillem/recipeApp/internal/error_handler"
 	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/user"
 )
 
 func (s *Server) GetAll(c *gin.Context) {
-	recipes := []recipe.RecipeSchema{}
-	ingredients := []recipe.IngredientsSchema{}
-	steps := []recipe.StepsStruct{}
-	nutritional_values := []recipe.NutritionalValue{}
-
-	err := s.NewDB.Select(&recipes, "SELECT * FROM recipes")
+	recipes, err := s.RecipeRepo.GetAllRecipes()
 	if err != nil {
-		print(err.Error())
-		error_handler.HandleError(c, http.StatusBadRequest, "Error while getting recipes", []error{err})
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
-	}
-
-	err = s.NewDB.Select(&ingredients, "SELECT ri.*, i.name AS name FROM recipe_ingredient ri JOIN ingredient i ON ri.ingredient_id = i.id")
-	if err != nil {
-		print(err.Error())
-		error_handler.HandleError(c, http.StatusBadRequest, "Error while getting ingredients", []error{err})
-		return
-	}
-
-	err = s.NewDB.Select(&steps, "SELECT * FROM step")
-	if err != nil {
-		print(err.Error())
-		error_handler.HandleError(c, http.StatusBadRequest, "Error while getting steps", []error{err})
-		return
-	}
-
-	err = s.NewDB.Select(&nutritional_values, "SELECT * FROM nutritional_value WHERE (recipe_id IS NOT NULL)::integer = 1")
-	if err != nil {
-		print(err.Error())
-		error_handler.HandleError(c, http.StatusBadRequest, "Error while getting nutritional values", []error{err})
-		return
-	}
-	var recipeDiets []struct {
-		RecipeID      string            `db:"recipe_id"`
-		ID            string            `db:"id" json:"id"`
-		CreatedAt     time.Time         `db:"created_at" json:"created_at"`
-		Name          string            `db:"name" json:"name"`
-		Description   string            `db:"description" json:"description"`
-		ExIngCategory []recipe.Category `json:"exingcategory"`
-	}
-	err = s.NewDB.Select(&recipeDiets, `
-		SELECT diet.*, rel.recipe_id
-		FROM rel_diet_recipe rel
-		JOIN diet ON rel.diet_id = diet.id
-	`)
-	if err != nil {
-		error_handler.HandleError(c, http.StatusBadRequest, "Error while getting diets", []error{err})
-		return
-	}
-
-	recipeMap := make(map[string]*recipe.RecipeSchema)
-	for i := range recipes {
-		recipeMap[recipes[i].ID] = &recipes[i]
-	}
-
-	for _, ingredient := range ingredients {
-		if recipe, found := recipeMap[ingredient.RecipeID]; found {
-			recipe.Ingredients = append(recipe.Ingredients, ingredient)
-		}
-	}
-	for _, step := range steps {
-		if recipe, found := recipeMap[step.RecipeID]; found {
-			recipe.Steps = append(recipe.Steps, step)
-		}
-	}
-	for _, rd := range recipeDiets {
-		if r, exists := recipeMap[rd.RecipeID]; exists {
-			r.Diet = append(r.Diet, recipe.DietSchema{
-				ID:          rd.ID,
-				CreatedAt:   rd.CreatedAt,
-				Name:        rd.Name,
-				Description: rd.Description,
-			})
-		}
 	}
 	c.JSON(http.StatusOK, recipes)
 }
 
 func (s *Server) GetPopular(c *gin.Context) {
-	f := recipe.Filter{}
-	recipes, err := f.Filter(s.NewDB)
+	recipes, err := s.RecipeRepo.GetByFilter(&recipe.Filter{})
 	if err != nil {
 		print(err.Errors)
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
@@ -152,19 +76,6 @@ func (s *Server) AddIngredient(c *gin.Context) {
 }
 
 func (s *Server) UpdateRecipe(c *gin.Context) {
-
-	var body struct {
-		Name        *string `db:"name" json:"name"`
-		Cuisine     *string `db:"cuisine" json:"cuisine"`
-		Yield       *int    `db:"yield" json:"yield"`
-		YieldUnit   *string `db:"yield_unit" json:"yield_unit"`
-		PrepTime    *string `db:"prep_time" json:"prep_time"`
-		CookingTime *string `db:"cooking_time" json:"cooking_time"`
-		Ingredients *[]recipe.IngredientsSchema
-		Diet        *recipe.DietSchema
-		Steps       *[]recipe.StepsStruct
-	}
-
 	user := user.UserModel{}
 	usrerr := user.GetFromGinContext(c.Get("user"))
 	if usrerr != nil {
@@ -182,58 +93,14 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 		return
 	}
 
+	var body recipe.RecipeSchema
 	c.ShouldBindJSON(&body)
 
-	tx, err := s.NewDB.Beginx()
+	err := s.RecipeRepo.UpdateRecipe(c.Param("id"), &body)
 	if err != nil {
-		error_handler.HandleError(c, http.StatusInternalServerError, "Error initiating transaction", []error{err})
-	}
-
-	var setParts []string
-	var args []interface{}
-
-	if body.Name != nil {
-		setParts = append(setParts, "name = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *body.Name)
-	}
-	if body.Cuisine != nil {
-		setParts = append(setParts, "cuisine = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *body.Cuisine)
-	}
-	if body.Yield != nil {
-		setParts = append(setParts, "yield = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *body.Yield)
-	}
-	if body.YieldUnit != nil {
-		setParts = append(setParts, "yield_unit = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *body.YieldUnit)
-	}
-	if body.PrepTime != nil {
-		setParts = append(setParts, "prep_time = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *body.PrepTime)
-	}
-	if body.CookingTime != nil {
-		setParts = append(setParts, "cooking_time = $"+strconv.Itoa(len(args)+1))
-		args = append(args, *body.CookingTime)
-	}
-
-	if len(setParts) == 0 {
-		// No fields to body
-		error_handler.HandleError(c, http.StatusExpectationFailed, "Nothing to update", []error{})
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
 	}
-
-	query := "UPDATE recipes SET " + strings.Join(setParts, ", ") + " WHERE id = $" + strconv.Itoa(len(args)+1)
-	args = append(args, c.Param("id"))
-
-	_, err = tx.Exec(query, args...)
-	if err != nil {
-		tx.Rollback()
-		error_handler.HandleError(c, http.StatusInternalServerError, "Error Updating recipe", []error{err})
-		return
-	}
-
-	tx.Commit()
 }
 
 func (s *Server) DeleteRecipe(c *gin.Context) {
@@ -255,23 +122,9 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 		return
 	}
 
-	result, err := s.NewDB.Exec(`DELETE FROM public.recipes WHERE id = $1`, i)
+	err := s.RecipeRepo.DeleteRecipe(i)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" { // 22P02 is the code for invalid_text_representation
-			log.Printf("Potential SQL injection or invalid input detected, with ip: %s, and input %s", c.ClientIP(), i)
-			error_handler.HandleError(
-				c,
-				http.StatusBadRequest, fmt.Sprintf(`Value "%s" is not an ID`, i),
-				[]error{err},
-			)
-			return
-		}
-		error_handler.HandleError(c, http.StatusInternalServerError, err.Error(), []error{err})
-		return
-	}
-
-	if rows, _ := result.RowsAffected(); rows <= 0 {
-		error_handler.HandleError(c, http.StatusNotFound, "Recipe doesn't exist", []error{errors.New("recipe doesn't exist")})
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return
 	}
 
@@ -327,7 +180,7 @@ func (s *Server) Filter(c *gin.Context) {
 		}
 	}
 
-	recipes, apiErr := body.Filter(s.NewDB)
+	recipes, apiErr := s.RecipeRepo.GetByFilter(&body)
 	if apiErr != nil {
 		error_handler.HandleError(c, apiErr.Code, apiErr.Message, apiErr.Errors)
 		return
