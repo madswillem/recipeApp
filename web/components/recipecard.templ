@@ -1,0 +1,84 @@
+package components
+
+type RecipeCardInfo struct {
+    ID          string
+    Name        string
+    Description string
+    HealthScore int
+    CookingTime int
+    ImageURL    string
+}
+
+templ RecipeCard(recipe RecipeCardInfo) {
+    <div class="recipe-card">
+        <div class="recipe-image">
+            <img src={ recipe.ImageURL } alt={ recipe.Name }/>
+        </div>
+        <div class="recipe-content">
+            <div class="recipe-header">
+                <h3 class="recipe-title">{ recipe.Name }</h3>
+                <div class="recipe-meta">
+                    <span class="health-score">
+                        <i class="fas fa-heart"></i> { string(recipe.HealthScore) }
+                    </span>
+                    <span class="cooking-time">
+                        <i class="fas fa-clock"></i> { string(recipe.CookingTime) } min
+                    </span>
+                </div>
+            </div>
+            <p class="recipe-description">{ recipe.Description }</p>
+        </div>
+    </div>
+
+    <style>
+        .recipe-card {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: white;
+            max-width: 350px;
+        }
+
+        .recipe-image {
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .recipe-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .recipe-content {
+            padding: 1rem;
+        }
+
+        .recipe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .recipe-title {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .recipe-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .recipe-description {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #444;
+            line-height: 1.4;
+        }
+    </style>
+}
