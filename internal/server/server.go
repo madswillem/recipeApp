@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +18,7 @@ import (
 	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/user"
 	"github.com/madswillem/recipeApp/internal/workers"
+	views "github.com/madswillem/recipeApp/web/view"
 )
 
 const MethodGET = "GET"
@@ -106,14 +106,11 @@ func NewServer(config *Config) *http.Server {
 }
 func (s *Server) RegisterRoutes() http.Handler {
 	r := gin.Default()
-	tmpl := template.Must(template.New("main").ParseGlob("web/templates/**/*"))
-	r.SetHTMLTemplate(tmpl)
-	r.NoRoute(func(c *gin.Context) {
-		c.HTML(http.StatusNotFound, "404/index", gin.H{
-			"pageTitle": "404 Page not found",
-		})
-	})
 	r.Use(s.CORSMiddleware())
+
+	r.GET("/", func(c *gin.Context) {
+		views.Index().Render(c.Request.Context(), c.Writer)
+	})
 
 	if s.Auth != nil {
 		print("Auth")

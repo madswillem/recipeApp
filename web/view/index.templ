@@ -1,0 +1,24 @@
+package views
+
+import "github.com/madswillem/recipeApp/web/components"
+
+templ Index() {
+    {{ 
+        card := components.RecipeCardInfo{
+            ID: "1",
+            Name: "Spaghetti Carbonara",
+            Description: "A classic Italian pasta made with eggs, cheese, bacon, and black pepper.",
+            HealthScore: 8,
+            CookingTime: 30,
+            ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+        }
+    }}
+    <!DOCTYPE html>
+    <html lang="en">
+        @components.Header()
+        <body>
+            <h1>Welcome to the Go Fullstack App</h1>
+            @components.RecipeCard(card)
+        </body>
+    </html>
+}
