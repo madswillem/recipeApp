@@ -40,7 +40,6 @@ func (recipe *RecipeSchema) UpdateSelected(change int, db *sqlx.DB) *error_handl
 	fmt.Println(recipe.Rating.Overall)
 
 	tx := db.MustBegin()
-	tx.MustExec(`UPDATE "recipes" SET selects=selects + 1, version=version + 1 WHERE id=$1`, recipe.ID)
 
 	query := `UPDATE rating SET ` + strings.Join(attributes, ",") + ` WHERE recipe_id = $1;`
 	println(query)

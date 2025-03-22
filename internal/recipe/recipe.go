@@ -23,6 +23,10 @@ type RecipeRepository interface {
 	Create(recipe *RecipeSchema) *error_handler.APIError
 	DeleteRecipe(id string) *error_handler.APIError
 	UpdateRecipe(id string, recipe *RecipeSchema) *error_handler.APIError
+	UpdateRecipeView(id string) *error_handler.APIError
+	UpdateRecipeSelect(id string) *error_handler.APIError
+	AddIngredient(id string, ingredient *IngredientsSchema) *error_handler.APIError
+	DeleteIngredient(id string, ingredientID string) *error_handler.APIError
 }
 
 type Filter struct {
@@ -433,17 +437,63 @@ func (rp *RecipeRepo) UpdateRecipe(id string, recipe *RecipeSchema) *error_handl
 		args = append(args, recipe.CookingTime)
 	}
 
-	if len(setParts) == 0 {
+	if len(setParts) == 0 && len(recipe.Ingredients) == 0 {
 		// No fields to body
-		return error_handler.New("Nothing to update", http.StatusExpectationFailed, errors.New("Nothing to update"))
+		return error_handler.New("Nothing to update", http.StatusExpectationFailed, errors.New("nothing to update"))
 	}
 
-	query := "UPDATE recipes SET " + strings.Join(setParts, ", ") + " WHERE id = $" + strconv.Itoa(len(args)+1)
-	args = append(args, id)
+	tx := rp.DB.MustBegin()
 
-	_, err := rp.DB.Exec(query, args...)
+	if len(setParts) > 0 {
+		query := "UPDATE recipes SET " + strings.Join(setParts, ", ") + " WHERE id = $" + strconv.Itoa(len(args)+1)
+		args = append(args, id)
+
+		_, err := tx.Exec(query, args...)
+		if err != nil {
+			tx.Rollback()
+			return error_handler.New("Error Updating recipe", http.StatusInternalServerError, err)
+		}
+	}
+
+	if len(recipe.Ingredients) != 0 {
+		for _, ing := range recipe.Ingredients {
+			err := rp.IngRep.Update(ing.ID, id, &ing, tx)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
+		}
+	}
+
+	err := tx.Commit()
 	if err != nil {
-		return error_handler.New("Error Updating recipe", http.StatusInternalServerError, err)
+		return error_handler.New("Error updating recipe", http.StatusInternalServerError, err)
+	}
+
+	return nil
+}
+
+func (rp *RecipeRepo) UpdateRecipeView(id string) *error_handler.APIError {
+	_, err := rp.DB.Exec(`UPDATE recipes SET views = views + 1 WHERE id = $1`, id)
+	if err != nil {
+		return error_handler.New("Error updating views", http.StatusInternalServerError, err)
 	}
 	return nil
+}
+
+func (rp *RecipeRepo) UpdateRecipeSelect(id string) *error_handler.APIError {
+	_, err := rp.DB.Exec(`UPDATE recipes SET selects = selects + 1 WHERE id = $1`, id)
+	if err != nil {
+		return error_handler.New("Error updating selects", http.StatusInternalServerError, err)
+	}
+	return nil
+}
+
+func (rp *RecipeRepo) AddIngredient(id string, ingredient *IngredientsSchema) *error_handler.APIError {
+	ingredient.RecipeID = id
+	return rp.IngRep.Create(ingredient, rp.DB)
+}
+
+func (rp *RecipeRepo) DeleteIngredient(id string, ingredientID string) *error_handler.APIError {
+	return rp.IngRep.Delete(id, ingredientID, rp.DB)
 }
