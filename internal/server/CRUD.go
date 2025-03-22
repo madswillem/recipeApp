@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -94,11 +95,17 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 	}
 
 	var body recipe.RecipeSchema
-	c.ShouldBindJSON(&body)
-
-	err := s.RecipeRepo.UpdateRecipe(c.Param("id"), &body)
+	err := c.ShouldBindJSON(&body)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		error_handler.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{err})
+		return
+	}
+
+	log.Default().Println(body.Ingredients[0].Amount)
+
+	updateerr := s.RecipeRepo.UpdateRecipe(c.Param("id"), &body)
+	if updateerr != nil {
+		error_handler.HandleError(c, updateerr.Code, updateerr.Message, updateerr.Errors)
 		return
 	}
 }
@@ -139,13 +146,9 @@ func (s *Server) GetById(c *gin.Context) {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 	}
 
-	// Move into GetById as soon as error handler has error types. Currently not
-	// because an error when updateing the views count would be escelated to the user
-	// and the user wouldnt get the recipe
-	_, update_err := s.NewDB.Exec("UPDATE recipes SET views = views + 1 WHERE id=$1", result.ID)
+	err = s.RecipeRepo.UpdateRecipeView(i)
 	if err != nil {
-		// Use logger as soon as its implemented
-		fmt.Println(update_err)
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -198,6 +201,12 @@ func (s *Server) Select(c *gin.Context) {
 	print(user.ID)
 
 	response, err := s.RecipeRepo.GetRecipeByID(c.Param("id"))
+	if err != nil {
+		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		return
+	}
+
+	err = s.RecipeRepo.UpdateRecipeSelect(c.Param("id"))
 	if err != nil {
 		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
 		return

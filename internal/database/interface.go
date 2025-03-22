@@ -12,6 +12,7 @@ type SQLDB interface {
 	DriverName() string
 	Get(dest interface{}, query string, args ...interface{}) error
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+	Exec(query string, args ...any) (sql.Result, error)
 	MustExec(query string, args ...interface{}) sql.Result
 	MustExecContext(ctx context.Context, query string, args ...interface{}) sql.Result
 	NamedExec(query string, arg interface{}) (sql.Result, error)
