@@ -4,21 +4,208 @@ import "github.com/madswillem/recipeApp/web/components"
 
 templ Index() {
     {{ 
-        card := components.RecipeCardInfo{
-            ID: "1",
-            Name: "Spaghetti Carbonara",
-            Description: "A classic Italian pasta made with eggs, cheese, bacon, and black pepper.",
-            HealthScore: 8,
-            CookingTime: 30,
-            ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+        cards := []components.RecipeCardInfo{
+            {
+                ID: "4",
+                Name: "Spaghetti Carbonara",
+                Description: "A classic Italian pasta made with eggs, cheese, bacon, and black pepper.",
+                HealthScore: 40,
+                CookingTime: 30,
+                Rating: 4.5,
+                Difficulty: "Medium",
+                ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+            },
+            {
+                ID: "5",
+                Name: "Chicken Stir-Fry",
+                Description: "A quick and easy stir-fry with chicken and vegetables.",
+                HealthScore: 75,
+                CookingTime: 25,
+                Rating: 4.2,
+                Difficulty: "Easy",
+                ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+            },
+            {
+                ID: "6",
+                Name: "Chocolate Cake",
+                Description: "A decadent chocolate cake for dessert lovers.",
+                HealthScore: 20,
+                CookingTime: 60,
+                Rating: 4.8,
+                Difficulty: "Hard",
+                ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+            },
+            {
+                ID: "7",
+                Name: "Veggie Delight",
+                Description: "A fresh mix of seasonal vegetables with a zesty dressing.",
+                HealthScore: 85,
+                CookingTime: 20,
+                Rating: 4.6,
+                Difficulty: "Easy",
+                ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+            },
         }
     }}
     <!DOCTYPE html>
     <html lang="en">
         @components.Header()
         <body>
-            <h1>Welcome to the Go Fullstack App</h1>
-            @components.RecipeCard(card)
+            @components.TopNav()
+            <div class="hero-section">
+                <div class="hero-left">
+                    @components.RecipeCard(components.RecipeCardInfo{
+                        ID: "1",
+                        Name: "Featured: Spaghetti Carbonara",
+                        Description: "A classic Italian pasta made with eggs, cheese, bacon, and black pepper.",
+                        HealthScore: 40,
+                        CookingTime: 30,
+                        Rating: 4.5,
+                        Difficulty: "Medium",
+                        ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+                        Scale: 1.7, // Larger card for featured recipe
+                    })
+                </div>
+                <div class="hero-right">
+                    <div class="welcome-text">
+                        <h1>Start Cooking Today</h1>
+                        <p>Discover amazing recipes and unleash your inner chef</p>
+                    </div>
+                    <div class="recipe-row">
+                        @components.RecipeCard(components.RecipeCardInfo{
+                            ID: "2",
+                            Name: "Chicken Stir-Fry",
+                            Description: "A quick and easy stir-fry with chicken and vegetables.",
+                            HealthScore: 75,
+                            CookingTime: 25,
+                            Rating: 4.2,
+                            Difficulty: "Easy",
+                            ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+                            Scale: 0.7,
+                        })
+                        @components.RecipeCard(components.RecipeCardInfo{
+                            ID: "3",
+                            Name: "Chocolate Cake",
+                            Description: "A decadent chocolate cake for dessert lovers.",
+                            HealthScore: 20,
+                            CookingTime: 60,
+                            Rating: 4.8,
+                            Difficulty: "Hard",
+                            ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+                            Scale: 0.7,
+                        })
+                        @components.RecipeCard(components.RecipeCardInfo{
+                            ID: "8",
+                            Name: "Greek Salad",
+                            Description: "Fresh Mediterranean salad with feta cheese and olives.",
+                            HealthScore: 90,
+                            CookingTime: 15,
+                            Rating: 4.4,
+                            Difficulty: "Easy",
+                            ImageURL: `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+                            Scale: 0.7,
+                        })
+                    </div>
+                </div>
+            </div>
+            <div class="recipe-grid-section">
+                <h2>Explore Our Recipes</h2>
+                <div class="recipe-grid">
+                    for _, card := range cards {
+                        @components.RecipeCard(card)
+                    }
+                </div>
+            </div>
         </body>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #f5f5f5;
+            }
+
+            .hero-section {
+                display: grid;
+                grid-template-columns: 40% 60%;  // Adjusted from 45% 55%
+                gap: 1rem;                       // Reduced from 2rem
+                padding: 0.5rem 1rem;
+                margin-top: 2rem;
+                min-height: calc(100vh - 100px);
+            }
+
+            .hero-left {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 2rem;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;  // Prevent overflow issues
+            }
+
+            .hero-right {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+                height: 100%;
+            }
+
+            .welcome-text {
+                text-align: center;
+                padding: 2rem;
+                height: 50%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .welcome-text h1 {
+                font-size: 5.5rem;         // Increased from 4.5rem
+                font-weight: 900;
+                color: #2d3748;
+                margin-bottom: 2rem;       // Increased from 1.5rem
+                line-height: 1.1;          // Adjusted for better spacing
+            }
+
+            .welcome-text p {
+                font-size: 2.5rem;         // Increased from 2rem
+                color: #4a5568;
+                line-height: 1.3;          // Adjusted for better spacing
+            }
+
+            .recipe-row {
+                width: 100%;
+                height: 50%;
+                display: grid;
+                grid-template-columns: repeat(3, 30%);
+                justify-content: center;
+                align-items: center;
+                padding: 0 0.5rem;
+                gap: 1rem;
+            }
+
+            .recipe-grid-section {
+                padding: 1rem 1.5rem;  // Remove horizontal padding
+                background-color: #ffffff;
+            }
+
+            .recipe-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 2rem;
+                width: 100%;
+                padding: 2rem;
+                justify-items: center;
+            }
+
+            .recipe-grid-section h2 {
+                text-align: center;
+                font-size: 3rem;
+                color: #2d3748;
+                margin-bottom: 3rem;
+                width: 100%;
+            }
+        </style>
     </html>
 }
