@@ -1,0 +1,102 @@
+package components
+
+templ TopNav() {
+    <nav class="topnav">
+        <div class="topnav-left">
+            <h1>Recipe App</h1>
+        </div>
+        <div class="topnav-center">
+            <div class="search-container">
+                <input type="text" placeholder="Search..." class="search-bar"/>
+                <button class="search-button" type="submit">
+                    <!-- Using a basic unicode search icon -->
+                    &#128269;
+                </button>
+            </div>
+        </div>
+        <div class="topnav-right">
+            <div class="account-dropdown">
+                <img src="https://img.icons8.com/ios-glyphs/30/000000/user--v1.png" alt="Account Icon" class="account-icon"/>
+                <div class="dropdown-bridge"></div>
+                <div class="dropdown-content">
+                    <a href="#">Profile</a>
+                    <a href="#">Settings</a>
+                    <a href="#">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <style>
+        .topnav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .topnav-left h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .topnav-center .search-bar {
+            width: 300px;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+        }
+        .search-container {
+            display: inline-flex;
+            align-items: center;
+        }
+        .search-button {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-left: none;
+            border-radius: 0 4px 4px 0;
+            background-color: #fff;
+            cursor: pointer;
+        }
+        .search-button:hover {
+            background-color: #f1f1f1;
+        }
+        .topnav-right {
+            position: relative;
+        }
+        .account-icon {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+        .dropdown-bridge {
+            position: absolute;
+            height: 10px;
+            width: 100%;
+            top: 30px;
+            background-color: transparent;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 35px;  /* Adjusted from 40px to 35px */
+            background-color: #ffffff;
+            min-width: 120px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .dropdown-content a {
+            display: block;
+            padding: 8px 12px;
+            text-decoration: none;
+            color: #333;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .account-dropdown:hover .dropdown-content {
+            display: block;
+        }
+    </style>
+}

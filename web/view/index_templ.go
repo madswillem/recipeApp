@@ -32,13 +32,47 @@ func Index() templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 
-		card := components.RecipeCardInfo{
-			ID:          "1",
-			Name:        "Spaghetti Carbonara",
-			Description: "A classic Italian pasta made with eggs, cheese, bacon, and black pepper.",
-			HealthScore: 8,
-			CookingTime: 30,
-			ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+		cards := []components.RecipeCardInfo{
+			{
+				ID:          "4",
+				Name:        "Spaghetti Carbonara",
+				Description: "A classic Italian pasta made with eggs, cheese, bacon, and black pepper.",
+				HealthScore: 40,
+				CookingTime: 30,
+				Rating:      4.5,
+				Difficulty:  "Medium",
+				ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+			},
+			{
+				ID:          "5",
+				Name:        "Chicken Stir-Fry",
+				Description: "A quick and easy stir-fry with chicken and vegetables.",
+				HealthScore: 75,
+				CookingTime: 25,
+				Rating:      4.2,
+				Difficulty:  "Easy",
+				ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+			},
+			{
+				ID:          "6",
+				Name:        "Chocolate Cake",
+				Description: "A decadent chocolate cake for dessert lovers.",
+				HealthScore: 20,
+				CookingTime: 60,
+				Rating:      4.8,
+				Difficulty:  "Hard",
+				ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+			},
+			{
+				ID:          "7",
+				Name:        "Veggie Delight",
+				Description: "A fresh mix of seasonal vegetables with a zesty dressing.",
+				HealthScore: 85,
+				CookingTime: 20,
+				Rating:      4.6,
+				Difficulty:  "Easy",
+				ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+			},
 		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\">")
 		if templ_7745c5c3_Err != nil {
@@ -48,15 +82,89 @@ func Index() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body><h1>Welcome to the Go Fullstack App</h1>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<body>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = components.RecipeCard(card).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = components.TopNav().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"hero-section\"><div class=\"hero-left\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = components.RecipeCard(components.RecipeCardInfo{
+			ID:          "1",
+			Name:        "Featured: Spaghetti Carbonara",
+			Description: "A classic Italian pasta made with eggs, cheese, bacon, and black pepper.",
+			HealthScore: 40,
+			CookingTime: 30,
+			Rating:      4.5,
+			Difficulty:  "Medium",
+			ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+			Scale:       1.7, // Larger card for featured recipe
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"hero-right\"><div class=\"welcome-text\"><h1>Start Cooking Today</h1><p>Discover amazing recipes and unleash your inner chef</p></div><div class=\"recipe-row\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = components.RecipeCard(components.RecipeCardInfo{
+			ID:          "2",
+			Name:        "Chicken Stir-Fry",
+			Description: "A quick and easy stir-fry with chicken and vegetables.",
+			HealthScore: 75,
+			CookingTime: 25,
+			Rating:      4.2,
+			Difficulty:  "Easy",
+			ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+			Scale:       0.7,
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = components.RecipeCard(components.RecipeCardInfo{
+			ID:          "3",
+			Name:        "Chocolate Cake",
+			Description: "A decadent chocolate cake for dessert lovers.",
+			HealthScore: 20,
+			CookingTime: 60,
+			Rating:      4.8,
+			Difficulty:  "Hard",
+			ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse3.mm.bing.net%2Fth%3Fid%3DOIP.9gK1EA1z9Q39BaqHZwYPrQHaE8%26pid%3DApi&f=1&ipt=d8c95e8119ad8c0924f8cde1328264224ddf1c3ce5a13b5d906e6a1bad45cf9b&ipo=images`,
+			Scale:       0.7,
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = components.RecipeCard(components.RecipeCardInfo{
+			ID:          "8",
+			Name:        "Greek Salad",
+			Description: "Fresh Mediterranean salad with feta cheese and olives.",
+			HealthScore: 90,
+			CookingTime: 15,
+			Rating:      4.4,
+			Difficulty:  "Easy",
+			ImageURL:    `https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images`,
+			Scale:       0.7,
+		}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></div><div class=\"recipe-grid-section\"><h2>Explore Our Recipes</h2><div class=\"recipe-grid\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, card := range cards {
+			templ_7745c5c3_Err = components.RecipeCard(card).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></div></body><style>\n            body {\n                margin: 0;\n                padding: 0;\n                background-color: #f5f5f5;\n            }\n\n            .hero-section {\n                display: grid;\n                grid-template-columns: 40% 60%;  // Adjusted from 45% 55%\n                gap: 1rem;                       // Reduced from 2rem\n                padding: 0.5rem 1rem;\n                margin-top: 2rem;\n                min-height: calc(100vh - 100px);\n            }\n\n            .hero-left {\n                display: flex;\n                justify-content: center;\n                align-items: center;\n                padding: 2rem;\n                width: 100%;\n                height: 100%;\n                overflow: hidden;  // Prevent overflow issues\n            }\n\n            .hero-right {\n                display: flex;\n                flex-direction: column;\n                gap: 0;\n                height: 100%;\n            }\n\n            .welcome-text {\n                text-align: center;\n                padding: 2rem;\n                height: 50%;\n                display: flex;\n                flex-direction: column;\n                justify-content: center;\n                align-items: center;\n            }\n\n            .welcome-text h1 {\n                font-size: 5.5rem;         // Increased from 4.5rem\n                font-weight: 900;\n                color: #2d3748;\n                margin-bottom: 2rem;       // Increased from 1.5rem\n                line-height: 1.1;          // Adjusted for better spacing\n            }\n\n            .welcome-text p {\n                font-size: 2.5rem;         // Increased from 2rem\n                color: #4a5568;\n                line-height: 1.3;          // Adjusted for better spacing\n            }\n\n            .recipe-row {\n                width: 100%;\n                height: 50%;\n                display: grid;\n                grid-template-columns: repeat(3, 30%);\n                justify-content: center;\n                align-items: center;\n                padding: 0 0.5rem;\n                gap: 1rem;\n            }\n\n            .recipe-grid-section {\n                padding: 1rem 1.5rem;  // Remove horizontal padding\n                background-color: #ffffff;\n            }\n\n            .recipe-grid {\n                display: grid;\n                grid-template-columns: repeat(4, 1fr);\n                gap: 2rem;\n                width: 100%;\n                padding: 2rem;\n                justify-items: center;\n            }\n\n            .recipe-grid-section h2 {\n                text-align: center;\n                font-size: 3rem;\n                color: #2d3748;\n                margin-bottom: 3rem;\n                width: 100%;\n            }\n        </style></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
