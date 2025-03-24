@@ -47,12 +47,12 @@ type Config struct {
 }
 
 type Server struct {
-	port     int
-	NewDB    *sqlx.DB
-	Registry *gocron.Registry
-	RecipeRepo   recipe.RecipeRepository
-	Auth     Auth
-	config   *Config
+	port       int
+	NewDB      *sqlx.DB
+	Registry   *gocron.Registry
+	RecipeRepo recipe.RecipeRepository
+	Auth       Auth
+	config     *Config
 }
 
 func NewServer(config *Config) *http.Server {
@@ -110,6 +110,17 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.GET("/", func(c *gin.Context) {
 		views.Index().Render(c.Request.Context(), c.Writer)
+	})
+
+	// Add the new recipe view route
+	r.GET("/view/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		recipe, apiErr := s.RecipeRepo.GetRecipeByID(id)
+		if apiErr != nil {
+			c.String(apiErr.Code, apiErr.Message)
+			return
+		}
+		views.RecipePage(recipe).Render(c.Request.Context(), c.Writer)
 	})
 
 	if s.Auth != nil {
