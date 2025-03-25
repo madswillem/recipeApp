@@ -10,7 +10,7 @@ type IngredientsSchema struct {
 	CreatedAt        time.Time        `db:"created_at" json:"created_at"`
 	RecipeID         string           `db:"recipe_id" json:"recipe_id"`
 	IngredientID     string           `db:"ingredient_id" json:"ingredient_id"`
-	Amount           int64            `db:"amount" json:"amount"`
+	Amount           int              `db:"amount" json:"amount"`
 	Unit             string           `db:"unit" json:"unit"`
 	Name             string           `db:"name" json:"name"`
 	NutritionalValue NutritionalValue `db:"nv" json:"nv"`

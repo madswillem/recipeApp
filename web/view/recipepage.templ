@@ -3,8 +3,9 @@ package views
 import "github.com/madswillem/recipeApp/web/components"
 import "github.com/madswillem/recipeApp/internal/recipe"
 import "fmt"
+import "strconv"
 
-templ RecipePage(recipe *recipe.RecipeSchema) {
+templ RecipePage(recipe *recipe.RecipeSchema, image string) {
     <!DOCTYPE html>
     <html lang="en">
         @components.Header()
@@ -13,6 +14,11 @@ templ RecipePage(recipe *recipe.RecipeSchema) {
             <div class="recipe-container">
                 <div class="recipe-header">
                     <h1 class="recipe-title">{recipe.Name}</h1>
+                    if image != "" {
+                        <div class="recipe-image">
+                            <img src={image} alt={recipe.Name} />
+                        </div>
+                    }
                     <div class="recipe-meta">
                         <span class="cuisine">Cuisine: {recipe.Cuisine}</span>
                         <span class="time">Prep: {recipe.PrepTime} | Cook: {recipe.CookingTime}</span>
@@ -26,7 +32,7 @@ templ RecipePage(recipe *recipe.RecipeSchema) {
                         <ul class="ingredients-list">
                             for _, ingredient := range recipe.Ingredients {
                                 <li>
-                                    <span class="amount">{fmt.Sprintf("%.2f", ingredient.Amount)} {ingredient.Unit}</span>
+                                    <span class="amount">{strconv.Itoa(ingredient.Amount)} {ingredient.Unit}</span>
                                     <span class="ingredient">{ingredient.Name}</span>
                                 </li>
                             }
@@ -159,6 +165,21 @@ templ RecipePage(recipe *recipe.RecipeSchema) {
                     border-radius: 9999px;
                     color: #4A5568;
                     font-size: 0.9rem;
+                }
+
+                .recipe-image {
+                    margin: 2rem 0;
+                    width: 100%;
+                    max-height: 500px;
+                    overflow: hidden;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                }
+
+                .recipe-image img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
                 }
             </style>
         </body>
