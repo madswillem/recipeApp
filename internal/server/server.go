@@ -120,7 +120,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 			c.String(apiErr.Code, apiErr.Message)
 			return
 		}
-		views.RecipePage(recipe).Render(c.Request.Context(), c.Writer)
+		views.RecipePage(recipe, "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.GUtzz3zgkImN3_ikBYuNfgHaE8%26pid%3DApi&f=1&ipt=e9db03ac01ccf7feb502d49d09aecfb45975d8873716e6dfa2b53c69ca00cc9c&ipo=images").Render(c.Request.Context(), c.Writer)
 	})
 
 	if s.Auth != nil {
