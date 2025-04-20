@@ -32,7 +32,7 @@ templ RecipeCard(recipe RecipeCardInfo) {
          recipe.Scale = 1.0
     }}}
     
-    <div id={ "recipe-card-" + recipe.ID } class="recipe-card" style={ fmt.Sprintf("width: %fpx; min-height: %fpx;", 450*recipe.Scale, 600*recipe.Scale) }>
+    <div id={ "recipe-card-" + recipe.ID } class="recipe-card" style={ fmt.Sprintf("--card-scale: %f", recipe.Scale) }>
         <div id={ "recipe-image-" + recipe.ID } class="recipe-image">
             <img id={ "recipe-img-" + recipe.ID } src={ recipe.ImageURL } alt={ recipe.Name }/>
         </div>
@@ -78,15 +78,19 @@ templ RecipeCard(recipe RecipeCardInfo) {
 
     <style>
         .recipe-card {
-            border-radius: 12px;
+            border-radius: 0.75rem;
+            width: calc(300px * var(--card-scale));
+            min-height: calc(400px * var(--card-scale));
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             background: rgb(255, 255, 255);
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
         }
 
         .recipe-image {
-            height: 50%;
+            height: calc(200px * var(--card-scale));
             overflow: hidden;
         }
 
@@ -109,17 +113,18 @@ templ RecipeCard(recipe RecipeCardInfo) {
 
         .recipe-title {
             margin: 0;
-            font-size: calc(1.5rem * var(--scale, 1));
+            font-size: calc(1.2rem * var(--card-scale));
             font-weight: 600;
             color: #2d3748;
+            max-width: 70%;
         }
 
         .recipe-meta {
             display: flex;
             justify-content: space-between;
-            margin: calc(1rem * var(--scale, 1)) 0;
+            margin: calc(0.5rem * var(--card-scale)) 0;
             color: #4a5568;
-            padding: 0 calc(0.5rem * var(--scale, 1));
+            padding: 0 calc(0.5rem * var(--card-scale));
         }
 
         .meta-item, .rating {
@@ -136,15 +141,24 @@ templ RecipeCard(recipe RecipeCardInfo) {
         }
 
         .meta-item span, .rating span, .health-text {
-            font-size: calc(1.1rem * var(--scale, 1));
+            font-size: calc(0.9vw * var(--scale, 1));
             font-weight: 500;
+        }
+
+        .meta-item span, .rating span {
+            font-size: calc(0.9rem * var(--card-scale));
+            white-space: nowrap;
         }
 
         .recipe-description {
             margin: 0;
-            font-size: calc(1rem * var(--scale, 1));
+            font-size: calc(0.875rem * var(--card-scale));
             color: #444;
             line-height: 1.5;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
         }
 
         .health-progress {
@@ -167,16 +181,49 @@ templ RecipeCard(recipe RecipeCardInfo) {
         }
 
         .health-text {
-            font-size: 1.4rem;
-            padding: 0;
+            font-size: calc(0.875rem * var(--card-scale));
+            font-weight: bold;
             text-anchor: middle;
-            dominant-baseline: middle;;
-            font-weight: bolder;
+            dominant-baseline: middle;
         }
 
         .health-progress svg {
-            width: calc(64px * var(--scale, 1));
-            height: calc(64px * var(--scale, 1));
+            width: calc(32px * var(--card-scale));
+            height: calc(32px * var(--card-scale));
+        }
+
+        @media (max-width: 768px) {
+            .recipe-card {
+                width: calc(250px * var(--card-scale));
+                min-height: calc(350px * var(--card-scale));
+            }
+
+            .recipe-image {
+                height: calc(150px * var(--card-scale));
+            }
+
+            .recipe-title {
+                font-size: calc(1rem * var(--card-scale));
+            }
+
+            .meta-item span, .rating span {
+                font-size: calc(0.8rem * var(--card-scale));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .recipe-card {
+                width: calc(200px * var(--card-scale));
+                min-height: calc(300px * var(--card-scale));
+            }
+
+            .recipe-image {
+                height: calc(120px * var(--card-scale));
+            }
+
+            .recipe-description {
+                -webkit-line-clamp: 2;
+            }
         }
     </style>
 }
