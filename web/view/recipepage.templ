@@ -68,9 +68,9 @@ templ RecipePage(recipe *recipe.RecipeSchema, image string) {
 
             <style>
                 .recipe-container {
-                    max-width: 1200px;
-                    margin: 2rem auto;
-                    padding: 0 1rem;
+                    max-width: 90vw;
+                    margin: 2vh auto;
+                    padding: 0 2vw;
                 }
 
                 .recipe-header {
@@ -79,16 +79,17 @@ templ RecipePage(recipe *recipe.RecipeSchema, image string) {
                 }
 
                 .recipe-title {
-                    font-size: 3rem;
+                    font-size: 2.5vw;
                     color: #2d3748;
-                    margin-bottom: 1rem;
+                    margin-bottom: 1vh;
                 }
 
                 .recipe-meta {
                     display: flex;
                     justify-content: center;
-                    gap: 2rem;
+                    gap: 2vw;
                     color: #4a5568;
+                    font-size: 1vw;
                 }
 
                 .recipe-body {
@@ -99,15 +100,15 @@ templ RecipePage(recipe *recipe.RecipeSchema, image string) {
 
                 .ingredients-section, .instructions-section {
                     background: white;
-                    padding: 2rem;
+                    padding: 2vh 2vw;
                     border-radius: 8px;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 }
 
                 h2 {
                     color: #2d3748;
-                    margin-bottom: 1.5rem;
-                    font-size: 1.8rem;
+                    margin-bottom: 1.5vh;
+                    font-size: 1.8vw;
                 }
 
                 .ingredients-list {
@@ -118,13 +119,13 @@ templ RecipePage(recipe *recipe.RecipeSchema, image string) {
                 .ingredients-list li {
                     display: flex;
                     gap: 1rem;
-                    margin-bottom: 0.8rem;
-                    font-size: 1.1rem;
+                    margin-bottom: 0.8vh;
+                    font-size: 1.1vw;
                 }
 
                 .amount {
                     color: #4a5568;
-                    min-width: 80px;
+                    min-width: 5vw;
                 }
 
                 .steps-list {
@@ -132,14 +133,14 @@ templ RecipePage(recipe *recipe.RecipeSchema, image string) {
                 }
 
                 .step {
-                    margin-bottom: 1.5rem;
-                    font-size: 1.1rem;
+                    margin-bottom: 1.5vh;
+                    font-size: 1.1vw;
                 }
 
                 .technique {
                     display: inline-block;
-                    margin-top: 0.5rem;
-                    font-size: 0.9rem;
+                    margin-top: 0.5vh;
+                    font-size: 0.9vw;
                     color: #718096;
                     font-style: italic;
                 }
@@ -161,16 +162,16 @@ templ RecipePage(recipe *recipe.RecipeSchema, image string) {
 
                 .diet-tag {
                     background: #EDF2F7;
-                    padding: 0.5rem 1rem;
+                    padding: 0.5vh 1vw;
                     border-radius: 9999px;
                     color: #4A5568;
-                    font-size: 0.9rem;
+                    font-size: 0.9vw;
                 }
 
                 .recipe-image {
-                    margin: 2rem 0;
+                    margin: 2vh 0;
                     width: 100%;
-                    max-height: 500px;
+                    max-height: 50vh;
                     overflow: hidden;
                     border-radius: 12px;
                     box-shadow: 0 4px 6px rgba(0,0,0,0.1);

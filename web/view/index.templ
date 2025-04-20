@@ -126,11 +126,11 @@ templ Index() {
 
             .hero-section {
                 display: grid;
-                grid-template-columns: 40% 60%;  // Adjusted from 45% 55%
-                gap: 1rem;                       // Reduced from 2rem
-                padding: 0.5rem 1rem;
-                margin-top: 2rem;
-                min-height: calc(100vh - 100px);
+                grid-template-columns: 40% 60%;
+                gap: 1vw;
+                padding: 0.5vh 1vw;
+                margin-top: 2vh;
+                min-height: 90vh;
             }
 
             .hero-left {
@@ -161,15 +161,15 @@ templ Index() {
             }
 
             .welcome-text h1 {
-                font-size: 5.5rem;         // Increased from 4.5rem
+                font-size: 4.5vw;
                 font-weight: 900;
                 color: #2d3748;
-                margin-bottom: 2rem;       // Increased from 1.5rem
+                margin-bottom: 2vh;
                 line-height: 1.1;          // Adjusted for better spacing
             }
 
             .welcome-text p {
-                font-size: 2.5rem;         // Increased from 2rem
+                font-size: 2vw;
                 color: #4a5568;
                 line-height: 1.3;          // Adjusted for better spacing
             }
@@ -178,11 +178,11 @@ templ Index() {
                 width: 100%;
                 height: 50%;
                 display: grid;
-                grid-template-columns: repeat(3, 30%);
+                grid-template-columns: repeat(3, minmax(250px, 1fr));
                 justify-content: center;
                 align-items: center;
                 padding: 0 0.5rem;
-                gap: 1rem;
+                gap: 1vw;
             }
 
             .recipe-grid-section {
@@ -192,18 +192,18 @@ templ Index() {
 
             .recipe-grid {
                 display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 2rem;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 2vw;
                 width: 100%;
-                padding: 2rem;
+                padding: 2vh 2vw;
                 justify-items: center;
             }
 
             .recipe-grid-section h2 {
                 text-align: center;
-                font-size: 3rem;
+                font-size: 2.5vw;
                 color: #2d3748;
-                margin-bottom: 3rem;
+                margin-bottom: 3vh;
                 width: 100%;
             }
         </style>
