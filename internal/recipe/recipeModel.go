@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 )
 
 type RecipeSchema struct {
@@ -27,12 +27,12 @@ type RecipeSchema struct {
 	Ingredients      []IngredientsSchema
 	Diet             []DietSchema
 	NutritionalValue NutritionalValue
-	Rating           RatingStruct `db:"rating"`
+	Rating           RatingStruct `db:"rating"` 
 	Steps            []StepsStruct
 }
 
-func (recipe *RecipeSchema) UpdateSelected(change int, db *sqlx.DB) *error_handler.APIError {
-	apiErr, attributes := UpdateRating(change)
+func (recipe *RecipeSchema) UpdateSelected(change int, db *sqlx.DB) *apierror.APIError {
+	attributes, apiErr := UpdateRating(change)
 	if apiErr != nil {
 		return apiErr
 	}
@@ -61,28 +61,28 @@ func (recipe *RecipeSchema) UpdateSelected(change int, db *sqlx.DB) *error_handl
 
 	err := tx.Commit()
 	if err != nil {
-		return error_handler.New("Error updating rating", http.StatusInternalServerError, err)
+		return apierror.New("Error updating rating", http.StatusInternalServerError, err)
 	}
 	
 
 	return apiErr
 }
 
-func (recipe *RecipeSchema) checkForRequiredFields() *error_handler.APIError {
+func (recipe *RecipeSchema) checkForRequiredFields() *apierror.APIError {
 	if recipe.Name == "" {
-		return error_handler.New("missing recipe name", http.StatusBadRequest, errors.New("missing recipe name"))
+		return apierror.New("missing recipe name", http.StatusBadRequest, errors.New("missing recipe name"))
 	}
 	if recipe.Ingredients == nil {
-		return error_handler.New("missing recipe ingredients", http.StatusBadRequest, errors.New("missing recipe ingredients"))
+		return apierror.New("missing recipe ingredients", http.StatusBadRequest, errors.New("missing recipe ingredients"))
 	}
 	if recipe.Steps == nil {
-		return error_handler.New("missing recipe steps", http.StatusBadRequest, errors.New("missing recipe steps"))
+		return apierror.New("missing recipe steps", http.StatusBadRequest, errors.New("missing recipe steps"))
 	}
 
 	return nil
 }
 
-func (recipe *RecipeSchema) Build(authorid string) *error_handler.APIError {
+func (recipe *RecipeSchema) Build(authorid string) *apierror.APIError {
 	// Ensure Recipe has all required fields
 	apiErr := recipe.checkForRequiredFields()
 	if apiErr != nil {
@@ -94,7 +94,7 @@ func (recipe *RecipeSchema) Build(authorid string) *error_handler.APIError {
 	for _, ingredient := range recipe.Ingredients {
 		err := ingredient.CheckForRequiredFields()
 		if err != nil {
-			return error_handler.New(fmt.Sprintf("missing required field in ingredient %s %s", ingredient.Name, err.Error()), http.StatusBadRequest, err)
+			return apierror.New(fmt.Sprintf("missing required field in ingredient %s %s", ingredient.Name, err.Error()), http.StatusBadRequest, err)
 		}
 	}
 	for i := 0; i < len(recipe.Ingredients); i++ {

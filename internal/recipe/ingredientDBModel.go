@@ -6,7 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/madswillem/recipeApp/internal/database"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 )
 
 type IngredientDB struct {
@@ -25,20 +25,20 @@ type Category struct {
 	Name string `db:"name" json:"name"`
 }
 
-func (ingredient *IngredientDB) Create(db *sqlx.DB) *error_handler.APIError {
+func (ingredient *IngredientDB) Create(db *sqlx.DB) *apierror.APIError {
 	tx := db.MustBegin()
 	// Create ingredient
 	query := `INSERT INTO ingredient (name, standard_unit, ndb_number, category, fdic_id)
               VALUES (:name, :standard_unit, :ndb_number, :category, :fdic_id) RETURNING id`
 	stmt, err := tx.PrepareNamed(query)
 	if err != nil {
-		return error_handler.New("Query error: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Query error: "+err.Error(), http.StatusInternalServerError, err)
 	}
 	err = stmt.Get(&ingredient.ID, ingredient)
 	stmt.Close()
 	if err != nil {
 		tx.Rollback()
-		return error_handler.New("Dtabase error: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Dtabase error: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	// Create Rating
@@ -53,18 +53,18 @@ func (ingredient *IngredientDB) Create(db *sqlx.DB) *error_handler.APIError {
 	_, err = tx.NamedExec(query, ingredient.Rating)
 	if err != nil {
 		tx.Rollback()
-		return error_handler.New("Error inserting recipe: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Error inserting recipe: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	tx.Commit()
 	return nil
 }
 
-func GetIngIDByName(name string, db database.SQLDB) (string, *error_handler.APIError) {
+func GetIngIDByName(name string, db database.SQLDB) (string, *apierror.APIError) {
 	var id string
 	err := db.QueryRow("SELECT id FROM ingredient WHERE LOWER(name) = LOWER($1)", name).Scan(&id)
 	if err != nil {
-		return "", error_handler.New("database error getting "+name+" : "+err.Error(), http.StatusInternalServerError, err)
+		return "", apierror.New("database error getting "+name+" : "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	return id, nil

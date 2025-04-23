@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 	"github.com/madswillem/recipeApp/internal/user"
 )
 
@@ -19,13 +19,13 @@ func (s *Server) GetRecommendation(c *gin.Context) {
 
 	err := user.GetByCookie(s.NewDB)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
 	err, recipes := user.GetRecomendation(s.NewDB)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (s *Server) CreateGroup(c *gin.Context) {
 
 	v, err := json.Marshal(u.RecipeGroups)
 	if err != nil {
-		error_handler.HandleError(c, http.StatusInternalServerError, "Couldnt Marshal recipe group", []error{err})
+		apierror.HandleError(c, http.StatusInternalServerError, "Couldnt Marshal recipe group", []error{err})
 	}
 
 	s.NewDB.MustExec(`UPDATE "user" SET groups = $1 WHERE id = $2`, v, u.ID)

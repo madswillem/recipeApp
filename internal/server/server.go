@@ -13,7 +13,7 @@ import (
 	"github.com/madswillem/gocron"
 	"github.com/madswillem/recipeApp/internal/auth"
 	"github.com/madswillem/recipeApp/internal/database"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 	"github.com/madswillem/recipeApp/internal/initializers"
 	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/user"
@@ -27,9 +27,9 @@ const MethodPost = "POST"
 type Auth interface {
 	Login(c *gin.Context, db *sqlx.DB)
 	Signup(c *gin.Context, db *sqlx.DB)
-	Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, user.UserModel)
+	Verify(db *sqlx.DB, tokenString string) (user.UserModel, *apierror.APIError)
 	Logout(c *gin.Context)
-	AccessControl(sub string, obj string, act string, repo recipe.RecipeRepository) (bool, *error_handler.APIError)
+	AccessControl(sub string, obj string, act string, repo recipe.RecipeRepository) (bool, *apierror.APIError)
 }
 
 type InnitFuncs func(*Server) error

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/user"
 )
@@ -15,7 +15,7 @@ import (
 func (s *Server) GetAll(c *gin.Context) {
 	recipes, err := s.RecipeRepo.GetAllRecipes()
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 	c.JSON(http.StatusOK, recipes)
@@ -25,7 +25,7 @@ func (s *Server) GetPopular(c *gin.Context) {
 	recipes, err := s.RecipeRepo.GetByFilter(&recipe.Filter{})
 	if err != nil {
 		print(err.Errors)
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 	c.JSON(http.StatusOK, recipes)
@@ -36,14 +36,14 @@ func (s *Server) AddRecipe(c *gin.Context) {
 
 	binderr := c.ShouldBindJSON(&body)
 	if binderr != nil {
-		error_handler.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{binderr})
+		apierror.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{binderr})
 		return
 	}
 
 	user := user.UserModel{}
 	err := user.GetFromGinContext(c.Get("user"))
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
@@ -51,7 +51,7 @@ func (s *Server) AddRecipe(c *gin.Context) {
 
 	err = s.RecipeRepo.Create(&body)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
@@ -63,13 +63,13 @@ func (s *Server) AddIngredient(c *gin.Context) {
 
 	binderr := c.ShouldBindJSON(&body)
 	if binderr != nil {
-		error_handler.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{binderr})
+		apierror.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{binderr})
 		return
 	}
 
 	err := body.Create(s.NewDB)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
@@ -80,24 +80,24 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 	user := user.UserModel{}
 	usrerr := user.GetFromGinContext(c.Get("user"))
 	if usrerr != nil {
-		error_handler.HandleError(c, usrerr.Code, usrerr.Message, usrerr.Errors)
+		usrerr.Handle(c)
 		return
 	}
 
 	ok, accesserr := s.Auth.AccessControl(user.ID, c.Param("id"), "update", s.RecipeRepo)
 	if accesserr != nil {
-		error_handler.HandleError(c, accesserr.Code, accesserr.Message, accesserr.Errors)
+		accesserr.Handle(c)
 		return
 	}
 	if !ok {
-		error_handler.HandleError(c, http.StatusUnauthorized, "User is not the owner of the recipe", []error{errors.New("user is not the owner of the recipe")})
+		apierror.HandleError(c, http.StatusUnauthorized, "User is not the owner of the recipe", []error{errors.New("user is not the owner of the recipe")})
 		return
 	}
 
 	var body recipe.RecipeSchema
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
-		error_handler.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{err})
+		apierror.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{err})
 		return
 	}
 
@@ -105,7 +105,7 @@ func (s *Server) UpdateRecipe(c *gin.Context) {
 
 	updateerr := s.RecipeRepo.UpdateRecipe(c.Param("id"), &body)
 	if updateerr != nil {
-		error_handler.HandleError(c, updateerr.Code, updateerr.Message, updateerr.Errors)
+		updateerr.Handle(c)
 		return
 	}
 }
@@ -114,24 +114,24 @@ func (s *Server) DeleteRecipe(c *gin.Context) {
 	user := user.UserModel{}
 	usrerr := user.GetFromGinContext(c.Get("user"))
 	if usrerr != nil {
-		error_handler.HandleError(c, usrerr.Code, usrerr.Message, usrerr.Errors)
+		usrerr.Handle(c)
 		return
 	}
 
 	i := c.Param("id")
 	owner, ownererr := s.RecipeRepo.GetRecipeAuthorbyID(i)
 	if ownererr != nil {
-		error_handler.HandleError(c, ownererr.Code, ownererr.Message, ownererr.Errors)
+		ownererr.Handle(c)
 		return
 	}
 	if owner != user.ID {
-		error_handler.HandleError(c, http.StatusUnauthorized, "User is not the owner of the recipe", []error{errors.New("user is not the owner of the recipe")})
+		apierror.HandleError(c, http.StatusUnauthorized, "User is not the owner of the recipe", []error{errors.New("user is not the owner of the recipe")})
 		return
 	}
 
 	err := s.RecipeRepo.DeleteRecipe(i)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
@@ -143,12 +143,12 @@ func (s *Server) GetById(c *gin.Context) {
 
 	result, err := s.RecipeRepo.GetRecipeByID(i)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 	}
 
 	err = s.RecipeRepo.UpdateRecipeView(i)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -164,7 +164,7 @@ func (s *Server) Filter(c *gin.Context) {
 	var body recipe.Filter
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
-		error_handler.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{err})
+		apierror.HandleError(c, http.StatusBadRequest, "Failed to read body", []error{err})
 		return
 	}
 
@@ -185,7 +185,7 @@ func (s *Server) Filter(c *gin.Context) {
 
 	recipes, apiErr := s.RecipeRepo.GetByFilter(&body)
 	if apiErr != nil {
-		error_handler.HandleError(c, apiErr.Code, apiErr.Message, apiErr.Errors)
+		apiErr.Handle(c)
 		return
 	}
 
@@ -202,25 +202,25 @@ func (s *Server) Select(c *gin.Context) {
 
 	response, err := s.RecipeRepo.GetRecipeByID(c.Param("id"))
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
 	err = s.RecipeRepo.UpdateRecipeSelect(c.Param("id"))
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
 	selectedErr := response.UpdateSelected(1, s.NewDB)
 	if selectedErr != nil {
-		error_handler.HandleError(c, selectedErr.Code, selectedErr.Message, selectedErr.Errors)
+		selectedErr.Handle(c)
 		return
 	}
 
 	err = user.AddToGroup(s.NewDB, response)
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
@@ -230,13 +230,13 @@ func (s *Server) Select(c *gin.Context) {
 func (s *Server) Deselect(c *gin.Context) {
 	response, err := s.RecipeRepo.GetRecipeByID(c.Param("id"))
 	if err != nil {
-		error_handler.HandleError(c, err.Code, err.Message, err.Errors)
+		err.Handle(c)
 		return
 	}
 
 	selectedErr := response.UpdateSelected(-1, s.NewDB)
 	if selectedErr != nil {
-		error_handler.HandleError(c, selectedErr.Code, selectedErr.Message, selectedErr.Errors)
+		selectedErr.Handle(c)
 		return
 	}
 
@@ -248,7 +248,7 @@ func (s *Server) Colormode(c *gin.Context) {
 	case "get":
 		cookie, err := c.Cookie("type")
 		if err != nil {
-			error_handler.HandleError(c, http.StatusBadRequest, "Cookie error", []error{err})
+			apierror.HandleError(c, http.StatusBadRequest, "Cookie error", []error{err})
 		}
 		c.JSON(http.StatusOK, gin.H{"type": cookie})
 	case "dark":

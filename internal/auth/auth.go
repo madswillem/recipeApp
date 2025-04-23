@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/user"
 	"golang.org/x/crypto/bcrypt"
@@ -116,7 +116,7 @@ func (a *Auth) Login(c *gin.Context, db *sqlx.DB) {
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
 
-func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError, user.UserModel) {
+func (a *Auth) Verify(db *sqlx.DB, tokenString string) (user.UserModel, *apierror.APIError) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -125,7 +125,7 @@ func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError,
 	})
 
 	if err != nil {
-		return error_handler.New("Invalid token", http.StatusUnauthorized, err), user.UserModel{}
+		return user.UserModel{}, apierror.New("Invalid token", http.StatusUnauthorized, err)
 	}
 
 	// Extract claims
@@ -135,10 +135,10 @@ func (a *Auth) Verify(db *sqlx.DB, tokenString string) (*error_handler.APIError,
 			ID:    claims["user_id"].(string),
 			Email: claims["email"].(string),
 		}
-		return nil, user
+		return user, nil
 	}
 
-	return error_handler.New("Invalid token", http.StatusUnauthorized, errors.New("invalid token")), user.UserModel{}
+	return user.UserModel{}, apierror.New("Invalid token", http.StatusUnauthorized, errors.New("invalid token"))
 }
 
 func (a *Auth) Logout(c *gin.Context) {
@@ -146,13 +146,13 @@ func (a *Auth) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 }
 
-func (a *Auth) AccessControl(sub string, obj string, act string, repo recipe.RecipeRepository) (bool, *error_handler.APIError) {
+func (a *Auth) AccessControl(sub string, obj string, act string, repo recipe.RecipeRepository) (bool, *apierror.APIError) {
 	owner, ownererr := repo.GetRecipeAuthorbyID(obj)
 	if ownererr != nil {
 		return false, ownererr
 	}
 	if owner != sub {
-		return false, error_handler.New("Unauthorized", http.StatusUnauthorized, errors.New("Unauthorized"))
+		return false, apierror.New("Unauthorized", http.StatusUnauthorized, errors.New("Unauthorized"))
 	}
 
 	return true, nil

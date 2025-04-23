@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 	"github.com/madswillem/recipeApp/internal/tools"
 )
 
@@ -57,11 +57,11 @@ func (rating *RatingStruct) DefaultRatingStruct(recipe_id *string, ingredient_id
 	rating.SubZeroDegree = 1000.0
 }
 
-func UpdateRating(change int) (*error_handler.APIError, []string) {
+func UpdateRating(change int) ([]string, *apierror.APIError) {
 	data, err := tools.GetCurrentData()
 
 	if err != nil {
-		return error_handler.New("fatal internal error", http.StatusInternalServerError, err), nil
+		return nil, apierror.New("fatal internal error", http.StatusInternalServerError, err)
 	}
 
 	factor := 1.1
@@ -83,7 +83,7 @@ func UpdateRating(change int) (*error_handler.APIError, []string) {
 	case "Sun":
 		result = append(result, fmt.Sprintf("sun = sun * %f", factor*float64(change)))
 	default:
-		return error_handler.New("fatal internal error", http.StatusInternalServerError, errors.New("fatal internal error")), nil
+		return nil, apierror.New("fatal internal error", http.StatusInternalServerError, errors.New("fatal internal error"))
 	}
 
 	switch data.Season {
@@ -96,7 +96,7 @@ func UpdateRating(change int) (*error_handler.APIError, []string) {
 	case "Aut":
 		result = append(result, fmt.Sprintf("aut = aut * %f", factor*float64(change)))
 	default:
-		return error_handler.New("fatal internal error", http.StatusInternalServerError, errors.New("fatal internal error")), nil
+		return nil, apierror.New("fatal internal error", http.StatusInternalServerError, errors.New("fatal internal error"))
 	}
 
 	switch data.Temp {
@@ -112,5 +112,5 @@ func UpdateRating(change int) (*error_handler.APIError, []string) {
 		result = append(result, fmt.Sprintf("thirtydegree = thirtydegree * %f", factor*float64(change)))
 	}
 
-	return nil, result
+	return result, nil
 }

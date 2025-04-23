@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 	"github.com/madswillem/recipeApp/internal/recipe"
 	"github.com/madswillem/recipeApp/internal/tools"
 )
@@ -30,33 +30,37 @@ type UserSettings struct {
 	Diet      recipe.DietSchema      `gorm:"polymorphic:Owner"`
 }
 
-func (user *UserModel) GetByCookie(db *sqlx.DB) *error_handler.APIError {
+func (user *UserModel) GetByCookie(db *sqlx.DB) *apierror.APIError {
 	err := db.Get(user, `SELECT id, created_at, ip, groups FROM "user" WHERE cookie = $1`, user.Cookie)
 	if err != nil {
-		return error_handler.New("database error", http.StatusInternalServerError, err)
+		return apierror.New("database error", http.StatusInternalServerError, err)
 	}
 	err = json.Unmarshal(user.Groups, &user.RecipeGroups)
 	if err != nil {
-		return error_handler.New("Error unmarshaling groups", http.StatusInternalServerError, err)
+		return apierror.New("Error unmarshaling groups", http.StatusInternalServerError, err)
 	}
 	return nil
 }
 
-func (user *UserModel) CheckIfExistsByCookie(db *sqlx.DB) bool {
+func (user *UserModel) CheckIfExistsByCookie(db *sqlx.DB) (bool, *apierror.APIError) {
 	found := false
 	err := db.Get(found, "SELECT EXISTS(SELECT * FROM user WHERE cookie = $1) AS found;", user.Cookie)
 	if err != nil {
-		error_handler.New("database error", http.StatusInternalServerError, err)
+		return false, apierror.New(err.Error(), http.StatusInternalServerError, err)
 	}
-	return found
+	return found, nil
 }
 
-func (user *UserModel) Create(db *sqlx.DB, ip string) *error_handler.APIError {
+func (user *UserModel) Create(db *sqlx.DB, ip string) *apierror.APIError {
 	user.LastLogin = time.Now()
 	user.IP = ip
 	for {
 		user.Cookie = tools.RandomString(20)
-		if !user.CheckIfExistsByCookie(db) {
+		exist, err := user.CheckIfExistsByCookie(db)
+		if !exist {
+			if err != nil {
+				return err
+			}
 			break
 		}
 	}
@@ -64,51 +68,51 @@ func (user *UserModel) Create(db *sqlx.DB, ip string) *error_handler.APIError {
 	query := `INSERT INTO "user" (cookie, ip) VALUES (:cookie, :ip) RETURNING id`
 	stmt, err := db.PrepareNamed(query)
 	if err != nil {
-		return error_handler.New("Query error: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Query error: "+err.Error(), http.StatusInternalServerError, err)
 	}
 	err = stmt.Get(&user.ID, user)
 	stmt.Close()
 	if err != nil {
-		return error_handler.New("Error inserting user: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Error inserting user: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	return nil
 }
 
-func (user *UserModel) GetFromGinContext(data any, exists bool) *error_handler.APIError {
+func (user *UserModel) GetFromGinContext(data any, exists bool) *apierror.APIError {
 	if data == nil {
-		return error_handler.New("User not logged in", http.StatusUnauthorized, errors.New("user not logged in"))
+		return apierror.New("User not logged in", http.StatusUnauthorized, errors.New("user not logged in"))
 	}
 	userData, ok := data.(UserModel)
 	if !ok {
-		return error_handler.New("User not of type UserModel", http.StatusUnauthorized, errors.New("user not of type UserModel"))
+		return apierror.New("User not of type UserModel", http.StatusUnauthorized, errors.New("user not of type UserModel"))
 	}
 	*user = userData
 	return nil
 }
 
-func (user *UserModel) AddGroup(db *sqlx.DB, r *recipe.RecipeSchema) *error_handler.APIError {
+func (user *UserModel) AddGroup(db *sqlx.DB, r *recipe.RecipeSchema) *apierror.APIError {
 	rp := RecipeGroupSchema{}
 	rp.Create(r)
 	user.RecipeGroups = append(user.RecipeGroups, rp)
 
 	v, err := json.Marshal(user.RecipeGroups)
 	if err != nil {
-		return error_handler.New("Failed to marshal recipe groups", http.StatusInternalServerError, err)
+		return apierror.New("Failed to marshal recipe groups", http.StatusInternalServerError, err)
 	}
 
 	db.MustExec(`UPDATE "user" SET groups = $1 WHERE id = $2`, v, user.ID)
 	return nil
 }
-func (user *UserModel) AddToGroup(db *sqlx.DB, r *recipe.RecipeSchema) *error_handler.APIError {
+func (user *UserModel) AddToGroup(db *sqlx.DB, r *recipe.RecipeSchema) *apierror.APIError {
 	var groups []byte
 	err := db.Get(&groups, `SELECT "groups" FROM "user" WHERE id=$1`, user.ID)
 	if err != nil {
-		return error_handler.New("Error fetching recipe_groups", http.StatusInternalServerError, err)
+		return apierror.New("Error fetching recipe_groups", http.StatusInternalServerError, err)
 	}
 	err = json.Unmarshal(groups, &user.RecipeGroups)
 	if err != nil {
-		return error_handler.New("Error unmarshaling groups", http.StatusInternalServerError, err)
+		return apierror.New("Error unmarshaling groups", http.StatusInternalServerError, err)
 	}
 	if len(user.RecipeGroups) < 1 {
 		return user.AddGroup(db, r)
@@ -145,17 +149,17 @@ func (user *UserModel) AddToGroup(db *sqlx.DB, r *recipe.RecipeSchema) *error_ha
 	group_addble[0].Group.Add(r)
 	user.Groups, err = json.Marshal(user.RecipeGroups)
 	if err != nil {
-		return error_handler.New("failed to marshal", http.StatusInternalServerError, err)
+		return apierror.New("failed to marshal", http.StatusInternalServerError, err)
 	}
 	_, err = db.Exec(`UPDATE "user" SET groups = $1 WHERE id = $2`, user.Groups, user.ID)
 	if err != nil {
-		return error_handler.New("database error", http.StatusInternalServerError, err)
+		return apierror.New("database error", http.StatusInternalServerError, err)
 	}
 
 	return nil
 }
 
 // Using db to extend an existing db like a search to show recipes similar to your intrests
-func (user *UserModel) GetRecomendation(db *sqlx.DB) (*error_handler.APIError, []recipe.RecipeSchema) {
+func (user *UserModel) GetRecomendation(db *sqlx.DB) (*apierror.APIError, []recipe.RecipeSchema) {
 	return nil, nil
 }

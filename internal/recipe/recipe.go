@@ -12,21 +12,21 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 )
 
 type RecipeRepository interface {
-	GetAllRecipes() ([]RecipeSchema, *error_handler.APIError)
-	GetByFilter(f *Filter) ([]RecipeSchema, *error_handler.APIError)
-	GetRecipeByID(id string) (*RecipeSchema, *error_handler.APIError)
-	GetRecipeAuthorbyID(id string) (string, *error_handler.APIError)
-	Create(recipe *RecipeSchema) *error_handler.APIError
-	DeleteRecipe(id string) *error_handler.APIError
-	UpdateRecipe(id string, recipe *RecipeSchema) *error_handler.APIError
-	UpdateRecipeView(id string) *error_handler.APIError
-	UpdateRecipeSelect(id string) *error_handler.APIError
-	AddIngredient(id string, ingredient *IngredientsSchema) *error_handler.APIError
-	DeleteIngredient(id string, ingredientID string) *error_handler.APIError
+	GetAllRecipes() ([]RecipeSchema, *apierror.APIError)
+	GetByFilter(f *Filter) ([]RecipeSchema, *apierror.APIError)
+	GetRecipeByID(id string) (*RecipeSchema, *apierror.APIError)
+	GetRecipeAuthorbyID(id string) (string, *apierror.APIError)
+	Create(recipe *RecipeSchema) *apierror.APIError
+	DeleteRecipe(id string) *apierror.APIError
+	UpdateRecipe(id string, recipe *RecipeSchema) *apierror.APIError
+	UpdateRecipeView(id string) *apierror.APIError
+	UpdateRecipeSelect(id string) *apierror.APIError
+	AddIngredient(id string, ingredient *IngredientsSchema) *apierror.APIError
+	DeleteIngredient(id string, ingredientID string) *apierror.APIError
 }
 
 type Filter struct {
@@ -56,7 +56,7 @@ func NewRecipeRepo(db *sqlx.DB) *RecipeRepo {
 	}
 }
 
-func (rp *RecipeRepo) GetAllRecipes() ([]RecipeSchema, *error_handler.APIError) {
+func (rp *RecipeRepo) GetAllRecipes() ([]RecipeSchema, *apierror.APIError) {
 	recipes := []RecipeSchema{}
 
 	err := rp.DB.Select(&recipes, `SELECT recipes.*,
@@ -73,7 +73,7 @@ func (rp *RecipeRepo) GetAllRecipes() ([]RecipeSchema, *error_handler.APIError) 
 							LEFT JOIN rating rt ON rt.recipe_id = recipes.id`)
 	if err != nil {
 		print(err.Error())
-		return nil, error_handler.New("Error while getting recipes", http.StatusBadRequest, err)
+		return nil, apierror.New("Error while getting recipes", http.StatusBadRequest, err)
 	}
 
 	if len(recipes) <= 0 {
@@ -88,7 +88,7 @@ func (rp *RecipeRepo) GetAllRecipes() ([]RecipeSchema, *error_handler.APIError) 
 	return recipes, nil
 }
 
-func (rp *RecipeRepo) GetByFilter(f *Filter) ([]RecipeSchema, *error_handler.APIError) {
+func (rp *RecipeRepo) GetByFilter(f *Filter) ([]RecipeSchema, *apierror.APIError) {
 	recipes := []RecipeSchema{}
 	var where []string
 	var args []interface{}
@@ -154,7 +154,7 @@ func (rp *RecipeRepo) GetByFilter(f *Filter) ([]RecipeSchema, *error_handler.API
 
 	err := rp.DB.Select(&recipes, query, args...)
 	if err != nil {
-		return nil, error_handler.New("Dtabase error: "+err.Error(), http.StatusInternalServerError, err)
+		return nil, apierror.New("Dtabase error: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	if len(recipes) <= 0 {
@@ -169,7 +169,7 @@ func (rp *RecipeRepo) GetByFilter(f *Filter) ([]RecipeSchema, *error_handler.API
 	return recipes, nil
 } 
 
-func (rp *RecipeRepo) completeRecipes(recipes []RecipeSchema) *error_handler.APIError {
+func (rp *RecipeRepo) completeRecipes(recipes []RecipeSchema) *apierror.APIError {
 	// Prepare
 	recipeMap := make(map[string]*RecipeSchema, len(recipes))
 	for i := range recipes {
@@ -184,14 +184,14 @@ func (rp *RecipeRepo) completeRecipes(recipes []RecipeSchema) *error_handler.API
 	ingredients := []IngredientsSchema{}
 	query, args, err := sqlx.In(`SELECT recipe_ingredient.*, ingredient.name FROM recipe_ingredient INNER JOIN ingredient ON ingredient.id = recipe_ingredient.ingredient_id WHERE recipe_ingredient.recipe_id IN (?)`, id_array)
 	if err != nil {
-		return error_handler.New("error building ingredients query: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("error building ingredients query: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	query = rp.DB.Rebind(query)
 
 	err = rp.DB.Select(&ingredients, query, args...)
 	if err != nil {
-		return error_handler.New("error fetching ingredients: "+query, http.StatusInternalServerError, err)
+		return apierror.New("error fetching ingredients: "+query, http.StatusInternalServerError, err)
 	}
 
 	for _, ingredient := range ingredients {
@@ -204,14 +204,14 @@ func (rp *RecipeRepo) completeRecipes(recipes []RecipeSchema) *error_handler.API
 	steps := []StepsStruct{}
 	query, args, err = sqlx.In(`SELECT * FROM step WHERE step.recipe_id IN (?)`, id_array)
 	if err != nil {
-		return error_handler.New("error fetching steps: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("error fetching steps: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	query = rp.DB.Rebind(query)
 
 	err = rp.DB.Select(&steps, query, args...)
 	if err != nil {
-		return error_handler.New("error fetching steps: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("error fetching steps: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	for _, step := range steps {
@@ -238,14 +238,14 @@ func (rp *RecipeRepo) completeRecipes(recipes []RecipeSchema) *error_handler.API
 		WHERE rel.recipe_id IN (?)
 	`, id_array)
 	if err != nil {
-		return error_handler.New("Error while getting diets", http.StatusInternalServerError, err)
+		return apierror.New("Error while getting diets", http.StatusInternalServerError, err)
 	}
 
 	query = rp.DB.Rebind(query)
 
 	err = rp.DB.Select(&diets, query, args...)
 	if err != nil {
-		return error_handler.New("error fetching steps: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("error fetching steps: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 
@@ -263,7 +263,7 @@ func (rp *RecipeRepo) completeRecipes(recipes []RecipeSchema) *error_handler.API
 	return nil
 }
 
-func (rp *RecipeRepo) GetRecipeByID(id string) (*RecipeSchema, *error_handler.APIError) {
+func (rp *RecipeRepo) GetRecipeByID(id string) (*RecipeSchema, *apierror.APIError) {
 	recipe := &RecipeSchema{}
 	err := rp.DB.Get(recipe, `SELECT recipes.*,
 								rt.id AS "rating.id", rt.created_at AS "rating.created_at",
@@ -278,12 +278,12 @@ func (rp *RecipeRepo) GetRecipeByID(id string) (*RecipeSchema, *error_handler.AP
 							LEFT JOIN rating rt ON rt.recipe_id = recipes.id
 							WHERE recipes.id = $1`, id)
 	if err != nil {
-		return nil, error_handler.New("An error ocurred fetching the recipe: "+err.Error(), http.StatusInternalServerError, err)
+		return nil, apierror.New("An error ocurred fetching the recipe: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	err = rp.DB.Select(&recipe.Steps, `SELECT * FROM step WHERE recipe_id = $1`, id)
 	if err != nil {
-		return nil, error_handler.New("An error ocurred fetching the steps: "+err.Error(), http.StatusInternalServerError, err)
+		return nil, apierror.New("An error ocurred fetching the steps: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	err = rp.DB.Select(&recipe.Ingredients, `SELECT recipe_ingredient.*, ingredient.name AS name
@@ -291,7 +291,7 @@ func (rp *RecipeRepo) GetRecipeByID(id string) (*RecipeSchema, *error_handler.AP
 										INNER JOIN ingredient ON ingredient.id = recipe_ingredient.ingredient_id
 										WHERE recipe_id = $1`, recipe.ID)
 	if err != nil {
-		return nil, error_handler.New("An error ocurred fetching the ingredients: "+err.Error(), http.StatusInternalServerError, err)
+		return nil, apierror.New("An error ocurred fetching the ingredients: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	err = rp.DB.Select(&recipe.Diet, `
@@ -301,42 +301,42 @@ func (rp *RecipeRepo) GetRecipeByID(id string) (*RecipeSchema, *error_handler.AP
 		WHERE rel.recipe_id = $1
 	`, recipe.ID)
 	if err != nil {
-		return nil, error_handler.New("Error while getting nutritional values", http.StatusBadRequest, err)
+		return nil, apierror.New("Error while getting nutritional values", http.StatusBadRequest, err)
 	}
 
 	return recipe, nil
 }
 
-func (rp *RecipeRepo) GetRecipeAuthorbyID(id string) (string, *error_handler.APIError) {
+func (rp *RecipeRepo) GetRecipeAuthorbyID(id string) (string, *apierror.APIError) {
 	var owner string
 	err := rp.DB.Get(&owner, `SELECT author FROM recipes WHERE id = $1`, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", error_handler.New("Recipe doesn't exist", http.StatusNotFound, err)
+			return "", apierror.New("Recipe doesn't exist", http.StatusNotFound, err)
 		}
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" { // 22P02 is the code for invalid_text_representation
 			log.Printf("Potential SQL injection or invalid input detected, with input %s", id)
-			return "", error_handler.New(fmt.Sprintf(`Value "%s" is not an ID`, id), http.StatusBadRequest, err)
+			return "", apierror.New(fmt.Sprintf(`Value "%s" is not an ID`, id), http.StatusBadRequest, err)
 		}
-		return "", error_handler.New("Error while getting author", http.StatusInternalServerError, err)
+		return "", apierror.New("Error while getting author", http.StatusInternalServerError, err)
 	}
 	return owner, nil
 }
 
-func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
+func (rp *RecipeRepo) Create(recipe *RecipeSchema) *apierror.APIError {
 	tx := rp.DB.MustBegin()
 	// Insert recipe
 	query := `INSERT INTO recipes (author, name, cuisine, yield, yield_unit, prep_time, cooking_time, version)
               VALUES (:author, :name, :cuisine, :yield, :yield_unit, :prep_time, :cooking_time, :version) RETURNING id`
 	stmt, err := tx.PrepareNamed(query)
 	if err != nil {
-		return error_handler.New("Query error: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Query error: "+err.Error(), http.StatusInternalServerError, err)
 	}
 	err = stmt.Get(&recipe.ID, recipe)
 	stmt.Close()
 	if err != nil {
 		tx.Rollback()
-		return error_handler.New("Dtabase error: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Dtabase error: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	// Insert Rating
@@ -352,7 +352,7 @@ func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
 	_, err = tx.NamedExec(query, recipe.Rating)
 	if err != nil {
 		tx.Rollback()
-		return error_handler.New("Error inserting recipe: "+err.Error(), http.StatusInternalServerError, err)
+		return apierror.New("Error inserting recipe: "+err.Error(), http.StatusInternalServerError, err)
 	}
 
 	// Insert Ingredient
@@ -386,29 +386,29 @@ func (rp *RecipeRepo) Create(recipe *RecipeSchema) *error_handler.APIError {
 
 	err = tx.Commit()
 	if err != nil {
-		return error_handler.New("Error creating recipe", http.StatusInternalServerError, err)
+		return apierror.New("Error creating recipe", http.StatusInternalServerError, err)
 	}
 
 	return nil
 }
 
-func (rp *RecipeRepo) DeleteRecipe(id string) *error_handler.APIError {
+func (rp *RecipeRepo) DeleteRecipe(id string) *apierror.APIError {
 	result, err := rp.DB.Exec(`DELETE FROM public.recipes WHERE id = $1`, id)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "22P02" { // 22P02 is the code for invalid_text_representation
-			return error_handler.New(fmt.Sprintf(`Value "%s" is not an ID`, id), http.StatusBadRequest, err)
+			return apierror.New(fmt.Sprintf(`Value "%s" is not an ID`, id), http.StatusBadRequest, err)
 		}
-		return error_handler.New(err.Error(), http.StatusInternalServerError, err)
+		return apierror.New(err.Error(), http.StatusInternalServerError, err)
 	}
 
 	if rows, _ := result.RowsAffected(); rows <= 0 {
-		return error_handler.New("Recipe doesn't exist", http.StatusNotFound, nil)
+		return apierror.New("Recipe doesn't exist", http.StatusNotFound, nil)
 	}
 
 	return nil
 }
 
-func (rp *RecipeRepo) UpdateRecipe(id string, recipe *RecipeSchema) *error_handler.APIError {
+func (rp *RecipeRepo) UpdateRecipe(id string, recipe *RecipeSchema) *apierror.APIError {
 	var setParts []string
 	var args []interface{}
 
@@ -439,7 +439,7 @@ func (rp *RecipeRepo) UpdateRecipe(id string, recipe *RecipeSchema) *error_handl
 
 	if len(setParts) == 0 && len(recipe.Ingredients) == 0 {
 		// No fields to body
-		return error_handler.New("Nothing to update", http.StatusExpectationFailed, errors.New("nothing to update"))
+		return apierror.New("Nothing to update", http.StatusExpectationFailed, errors.New("nothing to update"))
 	}
 
 	tx := rp.DB.MustBegin()
@@ -451,7 +451,7 @@ func (rp *RecipeRepo) UpdateRecipe(id string, recipe *RecipeSchema) *error_handl
 		_, err := tx.Exec(query, args...)
 		if err != nil {
 			tx.Rollback()
-			return error_handler.New("Error Updating recipe", http.StatusInternalServerError, err)
+			return apierror.New("Error Updating recipe", http.StatusInternalServerError, err)
 		}
 	}
 
@@ -467,33 +467,33 @@ func (rp *RecipeRepo) UpdateRecipe(id string, recipe *RecipeSchema) *error_handl
 
 	err := tx.Commit()
 	if err != nil {
-		return error_handler.New("Error updating recipe", http.StatusInternalServerError, err)
+		return apierror.New("Error updating recipe", http.StatusInternalServerError, err)
 	}
 
 	return nil
 }
 
-func (rp *RecipeRepo) UpdateRecipeView(id string) *error_handler.APIError {
+func (rp *RecipeRepo) UpdateRecipeView(id string) *apierror.APIError {
 	_, err := rp.DB.Exec(`UPDATE recipes SET views = views + 1 WHERE id = $1`, id)
 	if err != nil {
-		return error_handler.New("Error updating views", http.StatusInternalServerError, err)
+		return apierror.New("Error updating views", http.StatusInternalServerError, err)
 	}
 	return nil
 }
 
-func (rp *RecipeRepo) UpdateRecipeSelect(id string) *error_handler.APIError {
+func (rp *RecipeRepo) UpdateRecipeSelect(id string) *apierror.APIError {
 	_, err := rp.DB.Exec(`UPDATE recipes SET selects = selects + 1 WHERE id = $1`, id)
 	if err != nil {
-		return error_handler.New("Error updating selects", http.StatusInternalServerError, err)
+		return apierror.New("Error updating selects", http.StatusInternalServerError, err)
 	}
 	return nil
 }
 
-func (rp *RecipeRepo) AddIngredient(id string, ingredient *IngredientsSchema) *error_handler.APIError {
+func (rp *RecipeRepo) AddIngredient(id string, ingredient *IngredientsSchema) *apierror.APIError {
 	ingredient.RecipeID = id
 	return rp.IngRep.Create(ingredient, rp.DB)
 }
 
-func (rp *RecipeRepo) DeleteIngredient(id string, ingredientID string) *error_handler.APIError {
+func (rp *RecipeRepo) DeleteIngredient(id string, ingredientID string) *apierror.APIError {
 	return rp.IngRep.Delete(id, ingredientID, rp.DB)
 }

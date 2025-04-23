@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/madswillem/recipeApp/internal/database"
-	"github.com/madswillem/recipeApp/internal/error_handler"
+	"github.com/madswillem/recipeApp/internal/apierror"
 )
 
 type IngredientRepository struct {
@@ -18,8 +18,8 @@ func NewIngredientRepo() *IngredientRepository {
 	return &IngredientRepository{}
 }
 
-func (ir *IngredientRepository) Create(ingredient *IngredientsSchema, db database.SQLDB) *error_handler.APIError {
-	var err *error_handler.APIError
+func (ir *IngredientRepository) Create(ingredient *IngredientsSchema, db database.SQLDB) *apierror.APIError {
+	var err *apierror.APIError
 	ingredient.IngredientID, err = GetIngIDByName(ingredient.Name, db)
 	if err != nil {
 		return err
@@ -32,13 +32,13 @@ func (ir *IngredientRepository) Create(ingredient *IngredientsSchema, db databas
 
 	_, db_err := db.NamedExec(query, &ingredient)
 	if db_err != nil {
-		return error_handler.New("Error creating "+ingredient.Name+": "+db_err.Error(), http.StatusInternalServerError, db_err)
+		return apierror.New("Error creating "+ingredient.Name+": "+db_err.Error(), http.StatusInternalServerError, db_err)
 	}
 
 	return nil
 }
 
-func (ir *IngredientRepository) Update(id string, recipe_id string, ingredient *IngredientsSchema, db database.SQLDB) *error_handler.APIError {
+func (ir *IngredientRepository) Update(id string, recipe_id string, ingredient *IngredientsSchema, db database.SQLDB) *apierror.APIError {
 	var setParts []string
 	var args []interface{}
 
@@ -57,7 +57,7 @@ func (ir *IngredientRepository) Update(id string, recipe_id string, ingredient *
 
 	if len(setParts) == 0 {
 		// No fields to body
-		return error_handler.New("Nothing to update", http.StatusExpectationFailed, errors.New("nothing to update"))
+		return apierror.New("Nothing to update", http.StatusExpectationFailed, errors.New("nothing to update"))
 	}
 
 	query := "UPDATE recipe_ingredient SET " + strings.Join(setParts, ", ") + " WHERE id = $" + strconv.Itoa(len(args)+1) +" AND recipe_id = $" + strconv.Itoa(len(args)+2)
@@ -67,16 +67,16 @@ func (ir *IngredientRepository) Update(id string, recipe_id string, ingredient *
 
 	_, err := db.Exec(query, args...)
 	if err != nil {
-		return error_handler.New("Error Updating recipe", http.StatusInternalServerError, err)
+		return apierror.New("Error Updating recipe", http.StatusInternalServerError, err)
 	}
 	return nil
 }
 
-func (ir *IngredientRepository) Delete(id string, recipe_id string, db database.SQLDB) *error_handler.APIError {
+func (ir *IngredientRepository) Delete(id string, recipe_id string, db database.SQLDB) *apierror.APIError {
 	query := "DELETE FROM recipe_ingredient WHERE id = $1 AND recipe_id = $2"
 	_, err := db.Exec(query, id, recipe_id)
 	if err != nil {
-		return error_handler.New("Error Deleting ingredient", http.StatusInternalServerError, err)
+		return apierror.New("Error Deleting ingredient", http.StatusInternalServerError, err)
 	}
 	return nil
 }
